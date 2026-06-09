@@ -1,0 +1,82 @@
+// Disease Atlas — Prisma schema
+// 설계: docs/superpowers/specs/2026-06-09-disease-atlas-design.md
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+/// 신체 부위 — 그래프에서 노드 군집의 위치/색을 결정
+model BodyPart {
+  id         String    @id @default(cuid())
+  name       String    @unique // 뇌·신경, 가슴, 복부, 관절, 내분비
+  slug       String    @unique
+  color      String // hex 색상
+  layoutZone String // head | chest | abdomen | limbs | endocrine (그래프 배치 구역)
+  order      Int       @default(0)
+  diseases   Disease[]
+}
+
+/// 계통/분류 — 감염, 자가면역, 암, 대사, 퇴행 등
+model Category {
+  id       String    @id @default(cuid())
+  name     String    @unique
+  slug     String    @unique
+  diseases Disease[]
+}
+
+/// 증상 마스터 — 여러 질병이 공유 (공통 증상 엣지의 근거)
+model Symptom {
+  id       String           @id @default(cuid())
+  name     String           @unique
+  diseases DiseaseSymptom[]
+}
+
+/// 질병 본체
+model Disease {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  slug        String   @unique
+  description String // 용어 설명
+  treatment   String // 치료법
+
+  bodyPartId String
+  bodyPart   BodyPart @relation(fields: [bodyPartId], references: [id])
+
+  categoryId String?
+  category   Category? @relation(fields: [categoryId], references: [id])
+
+  symptoms      DiseaseSymptom[]
+  relationsFrom DiseaseRelation[] @relation("from")
+  relationsTo   DiseaseRelation[] @relation("to")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+/// 질병 ↔ 증상 다대다
+model DiseaseSymptom {
+  diseaseId String
+  symptomId String
+  disease   Disease @relation(fields: [diseaseId], references: [id], onDelete: Cascade)
+  symptom   Symptom @relation(fields: [symptomId], references: [id], onDelete: Cascade)
+
+  @@id([diseaseId, symptomId])
+}
+
+/// 합병/연관 질환 — 명시적 링크 (자동 파생 엣지가 아닌 수동 관계)
+model DiseaseRelation {
+  id     String  @id @default(cuid())
+  fromId String
+  toId   String
+  type   String  @default("comorbidity") // comorbidity(합병/연관)
+  note   String?
+  from   Disease @relation("from", fields: [fromId], references: [id], onDelete: Cascade)
+  to     Disease @relation("to", fields: [toId], references: [id], onDelete: Cascade)
+
+  @@unique([fromId, toId, type])
+}

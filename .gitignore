@@ -13,3 +13,5 @@ dist/
 # db
 *.db
 *.sqlite
+
+/src/generated/prisma
