@@ -1,4 +1,5 @@
 // Atlas (메인) — 질병 관계 그래프
+import Link from "next/link";
 import { getAtlasGraph } from "@/lib/atlas-data";
 import AtlasFlow from "@/components/atlas/AtlasFlow";
 import Disclaimer from "@/components/atlas/Disclaimer";
@@ -48,7 +49,16 @@ export default async function Home() {
           </div>
         </div>
 
-        <Disclaimer className="hidden max-w-xs text-right md:block" />
+        <div className="flex items-center gap-4">
+          <Disclaimer className="hidden max-w-xs text-right md:block" />
+          <Link
+            href="/admin"
+            aria-label="관리자"
+            className="shrink-0 rounded-md border border-[var(--line)] px-2.5 py-1.5 text-[12px] text-[var(--muted)] transition-colors hover:border-[var(--line-strong)] hover:text-[var(--paper-dim)]"
+          >
+            관리
+          </Link>
+        </div>
       </header>
 
       <main className="relative min-h-0 flex-1">
