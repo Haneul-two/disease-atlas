@@ -20,6 +20,7 @@ import type { AtlasData, EdgeType } from "@/lib/atlas-types";
 import { EDGE_COLORS } from "@/lib/atlas-types";
 import DiseaseNode from "./DiseaseNode";
 import Silhouette from "./Silhouette";
+import Starfield from "./Starfield";
 import FilterBar from "./FilterBar";
 import DetailPanel from "./DetailPanel";
 import SearchBox from "./SearchBox";
@@ -227,6 +228,8 @@ function AtlasInner({ data }: { data: AtlasData }) {
         toggleEdge={toggleEdge}
       />
       <div className="relative flex-1">
+        {/* 그래프 뒤 고정 분위기 레이어 — 팬/줌과 분리되어 깊이감을 만든다 */}
+        <Starfield />
         <ReactFlow
           nodes={renderNodes}
           edges={renderEdges}

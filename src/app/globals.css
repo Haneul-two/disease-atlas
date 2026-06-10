@@ -53,11 +53,13 @@ body {
   background-color: var(--ink-850);
   color: var(--foreground);
   font-family: var(--f-plex-kr), system-ui, sans-serif;
-  /* 깊이감: 본빛 비네트 + 미세 그레인 */
+  /* 깊이감: 본빛 비네트 + 심우주 색 웅덩이 + 미세 그레인 */
   background-image:
-    radial-gradient(120% 90% at 50% -10%, rgba(203, 184, 147, 0.06), transparent 55%),
-    radial-gradient(100% 120% at 100% 110%, rgba(91, 183, 173, 0.05), transparent 50%),
-    radial-gradient(100% 120% at 0% 110%, rgba(224, 96, 122, 0.04), transparent 50%);
+    radial-gradient(120% 90% at 50% -10%, rgba(203, 184, 147, 0.07), transparent 55%),
+    radial-gradient(85% 75% at 88% 18%, rgba(120, 96, 196, 0.08), transparent 60%),
+    radial-gradient(80% 70% at 10% 28%, rgba(70, 104, 188, 0.09), transparent 60%),
+    radial-gradient(100% 120% at 100% 110%, rgba(91, 183, 173, 0.07), transparent 50%),
+    radial-gradient(100% 120% at 0% 110%, rgba(224, 96, 122, 0.05), transparent 50%);
   background-attachment: fixed;
 }
 
@@ -97,6 +99,30 @@ body::before {
 @keyframes nebula-drift {
   0%, 100% { opacity: 0.7; transform: translate(-50%, -50%) scale(1); }
   50% { opacity: 1; transform: translate(-50%, -50%) scale(1.07); }
+}
+
+/* 별먼지 — 반짝임 */
+@keyframes twinkle {
+  0%, 100% { opacity: 0.12; }
+  50% { opacity: 0.85; }
+}
+
+/* 오로라 색 웅덩이 — 아주 느린 표류 */
+.atlas-aurora {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(48px);
+  animation: aurora-drift 26s ease-in-out infinite;
+  will-change: transform, opacity;
+}
+@keyframes aurora-drift {
+  0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.75; }
+  50% { transform: translate(3.5%, -2.5%) scale(1.12); opacity: 1; }
+}
+
+/* 해부 힌트(쇄골·골반) — 늦게 떠오른다 */
+@keyframes hint-in {
+  from { opacity: 0; }
 }
 
 /* 인스펙션 카드 슬라이드 */

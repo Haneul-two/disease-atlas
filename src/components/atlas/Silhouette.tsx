@@ -16,6 +16,34 @@ type Props = {
 const BODY_LEFT = 470; // div 중심 = 중앙 세로축
 const BODY_TOP = 90;
 
+/** 전신 외곽 — 목→어깨→팔(몸에 붙임)→허리→골반→다리→발, 좌우 대칭의 연속 곡선.
+ *  좌측 좌표를 기준으로 우측은 x' = 560 - x 미러. */
+const BODY_OUTLINE = [
+  "M 258 150",
+  "C 256 170 250 182 234 190", // 목 → 승모근
+  "C 198 202 170 218 158 248", // 어깨
+  "C 140 290 132 348 130 412", // 상완(몸에 붙은 팔) 외곽
+  "C 126 470 136 520 150 558", // 팔꿈치 → 허리(잘록)
+  "C 158 595 160 642 154 690", // 골반 외곽
+  "C 150 760 158 840 164 905", // 허벅지 외곽
+  "C 168 950 170 985 170 1015", // 종아리 → 발목
+  "L 208 1015", // 발
+  "C 212 960 216 905 222 850", // 종아리 안쪽
+  "C 230 790 246 745 266 715", // 허벅지 안쪽
+  "C 274 706 278 702 280 700", // 가랑이 중심
+  "C 282 702 286 706 294 715",
+  "C 314 745 330 790 338 850",
+  "C 344 905 348 960 352 1015",
+  "L 390 1015",
+  "C 390 985 392 950 396 905",
+  "C 402 840 410 760 406 690",
+  "C 400 642 402 595 410 558",
+  "C 424 520 434 470 430 412",
+  "C 428 348 420 290 402 248",
+  "C 390 218 362 202 326 190",
+  "C 310 182 304 170 302 150",
+].join(" ");
+
 // 라인아트 스트로크 — pathLength=1 트릭으로 dashoffset 1→0 드로잉
 function DrawnPath({
   d,
@@ -100,59 +128,57 @@ export default function Silhouette({ bodyParts, nodes, visibleZones, activeZone 
       >
         <svg width={560} height={1080} viewBox="0 0 560 1080" fill="none" aria-hidden>
           {/* 아주 옅은 면 — 몸의 존재감만 */}
-          <g fill="rgba(203, 184, 147, 0.025)" stroke="none">
-            <circle cx={280} cy={96} r={78} />
-            <path d="M252 166 h56 v42 h-56 Z" />
-            <path d="M150 210 Q280 184 410 210 L432 470 Q436 650 390 775 Q280 832 170 775 Q124 650 128 470 Z" />
-            <path d="M196 772 Q166 872 172 1000 L232 1000 Q246 860 268 700 Z" />
-            <path d="M364 772 Q394 872 388 1000 L328 1000 Q314 860 292 700 Z" />
+          <g fill="rgba(203, 184, 147, 0.03)" stroke="none">
+            <circle cx={280} cy={92} r={56} />
+            <path d={BODY_OUTLINE} />
           </g>
 
-          {/* 라인아트 외곽선 — 위에서 아래로 순서대로 그려진다 */}
+          {/* 라인아트 외곽선 — 머리부터 발끝까지 순서대로 그려진다 */}
           <g
-            stroke="rgba(203, 184, 147, 0.22)"
-            strokeWidth={1.1}
+            stroke="rgba(203, 184, 147, 0.24)"
+            strokeWidth={1.2}
             strokeLinecap="round"
+            strokeLinejoin="round"
             fill="none"
           >
             {/* 머리 */}
             <circle
               cx={280}
-              cy={96}
-              r={78}
+              cy={92}
+              r={56}
               pathLength={1}
               strokeDasharray={1}
-              style={{ animation: "body-draw 1.4s cubic-bezier(0.4,0,0.2,1) 0.2s backwards" }}
+              style={{ animation: "body-draw 1.3s cubic-bezier(0.4,0,0.2,1) 0.2s backwards" }}
             />
-            {/* 목 */}
-            <DrawnPath d="M252 170 L252 208 M308 170 L308 208" delay={0.9} duration={0.6} />
-            {/* 몸통 */}
-            <DrawnPath
-              d="M150 210 Q280 184 410 210 L432 470 Q436 650 390 775 Q280 832 170 775 Q124 650 128 470 Z"
-              delay={1.1}
-              duration={2.2}
+            {/* 전신 외곽 — 하나의 연속 곡선 */}
+            <DrawnPath d={BODY_OUTLINE} delay={1.0} duration={3.2} />
+          </g>
+
+          {/* 해부 힌트 — 쇄골·골반, 아주 흐릿하게 나중에 떠오른다 */}
+          <g
+            stroke="rgba(203, 184, 147, 0.12)"
+            strokeWidth={1}
+            strokeLinecap="round"
+            fill="none"
+          >
+            <path
+              d="M230 218 Q280 236 330 218"
+              style={{ animation: "hint-in 1.2s ease 3.4s backwards" }}
             />
-            {/* 팔 */}
+            <path
+              d="M234 656 Q280 690 326 656"
+              style={{ animation: "hint-in 1.2s ease 3.7s backwards" }}
+            />
+            {/* 팔 분리선 — 겨드랑이에서 손목으로, 몸과 팔을 나눈다 */}
             <DrawnPath
-              d="M158 222 Q96 282 78 470 Q70 562 92 652"
-              delay={1.7}
-              duration={1.4}
+              d="M 178 268 C 164 330 158 395 160 455 C 162 510 168 545 178 575"
+              delay={3.0}
+              duration={1.2}
             />
             <DrawnPath
-              d="M402 222 Q464 282 482 470 Q490 562 468 652"
-              delay={1.7}
-              duration={1.4}
-            />
-            {/* 다리 */}
-            <DrawnPath
-              d="M196 772 Q166 872 172 1000 M268 700 Q246 860 232 1000"
-              delay={2.4}
-              duration={1.4}
-            />
-            <DrawnPath
-              d="M364 772 Q394 872 388 1000 M292 700 Q314 860 328 1000"
-              delay={2.4}
-              duration={1.4}
+              d="M 382 268 C 396 330 402 395 400 455 C 398 510 392 545 382 575"
+              delay={3.0}
+              duration={1.2}
             />
           </g>
         </svg>
