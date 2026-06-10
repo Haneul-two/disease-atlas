@@ -7,7 +7,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
 }
 
 /// 신체 부위 — 그래프에서 노드 군집의 위치/색을 결정
