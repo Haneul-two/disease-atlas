@@ -9,13 +9,15 @@ type Props = {
   bodyParts: AtlasBodyPart[];
   nodes: AtlasNode[];
   visibleZones: Set<string>;
+  /** 강조(호버/선택) 노드가 속한 부위 — 해당 글로우를 밝힌다 */
+  activeZone?: string | null;
 };
 
 // 실루엣 SVG 좌표 → 그래프 좌표: graph_x = svgx + 190, graph_y = svgy + 90
 const BODY_LEFT = 470; // div 중심 = 중앙 세로축
 const BODY_TOP = 90;
 
-export default function Silhouette({ bodyParts, nodes, visibleZones }: Props) {
+export default function Silhouette({ bodyParts, nodes, visibleZones, activeZone }: Props) {
   const countByZone = new Map<string, number>();
   for (const n of nodes) {
     if (!visibleZones.has(n.layoutZone)) continue;
@@ -32,10 +34,14 @@ export default function Silhouette({ bodyParts, nodes, visibleZones }: Props) {
 
   return (
     <ViewportPortal>
-      {/* 1) 부위별 색 글로우 — 각 클러스터 뒤에 깔려 노드를 신체에 묶는다 */}
+      {/* 1) 부위별 색 글로우 — 각 클러스터 뒤에 깔려 노드를 신체에 묶는다.
+             호버/선택 부위는 밝히고, 다른 부위는 살짝 가라앉힌다. */}
       {activeParts.map((bp, i) => {
         const c = zoneCenter(bp.layoutZone);
         const e = zoneExtent(bp.layoutZone, countByZone.get(bp.layoutZone) ?? 1);
+        const isActive = activeZone === bp.layoutZone;
+        const dimOther = !!activeZone && !isActive;
+        const a = isActive ? ["55", "30"] : ["26", "12"]; // [중심, 중간] 알파(hex)
         return (
           <div
             key={`glow-${bp.slug}`}
@@ -47,8 +53,13 @@ export default function Silhouette({ bodyParts, nodes, visibleZones }: Props) {
               height: e.ry * 2,
               pointerEvents: "none",
               borderRadius: "50%",
-              background: `radial-gradient(ellipse at center, ${bp.color}26 0%, ${bp.color}12 38%, transparent 72%)`,
-              animation: `atlas-breathe 7s ease-in-out ${i * 0.9}s infinite`,
+              transform: "translate(-50%, -50%)",
+              background: `radial-gradient(ellipse at center, ${bp.color}${a[0]} 0%, ${bp.color}${a[1]} 38%, transparent 72%)`,
+              opacity: dimOther ? 0.35 : 1,
+              transition: "opacity 0.25s ease",
+              animation: isActive
+                ? undefined
+                : `atlas-breathe 7s ease-in-out ${i * 0.9}s infinite`,
               willChange: "transform, opacity",
             }}
           />

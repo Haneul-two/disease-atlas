@@ -36,7 +36,25 @@ function AtlasInner({ data }: { data: AtlasData }) {
     new Set<EdgeType>(["relation", "symptom"])
   );
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [hoveredId, setHoveredId] = useState<string | null>(null);
   const { setCenter } = useReactFlow();
+
+  // 호버가 선택보다 우선 — 강조 대상 id
+  const activeId = hoveredId ?? selectedId;
+
+  // 노드별 연결 수(의미 있는 relation·symptom 기준) → 크기 가중치(0~1)
+  const weightById = useMemo(() => {
+    const deg = new Map<string, number>();
+    for (const e of data.edges) {
+      if (!e.types.some((t) => t === "relation" || t === "symptom")) continue;
+      deg.set(e.source, (deg.get(e.source) ?? 0) + 1);
+      deg.set(e.target, (deg.get(e.target) ?? 0) + 1);
+    }
+    const max = Math.max(1, ...deg.values());
+    const w = new Map<string, number>();
+    for (const n of data.nodes) w.set(n.id, (deg.get(n.id) ?? 0) / max);
+    return w;
+  }, [data.edges, data.nodes]);
 
   // 검색/관련 질환에서 노드로 점프 — 부위가 숨겨져 있으면 켜고, 선택 + 화면 중앙 이동.
   const focusNode = useCallback(
@@ -74,6 +92,7 @@ function AtlasInner({ data }: { data: AtlasData }) {
             label: n.name,
             color: n.color,
             bodyPartName: n.bodyPartName,
+            weight: weightById.get(n.id) ?? 0,
             appearDelay: zi * 130 + i * 45,
           },
         };
@@ -100,18 +119,24 @@ function AtlasInner({ data }: { data: AtlasData }) {
     [data.edges, enabledEdges, visibleNodeIds]
   );
 
-  // 선택 노드의 이웃 (디밍 계산용)
+  // 강조 노드의 이웃 (호버 우선, 디밍 계산용)
   const neighborIds = useMemo(() => {
-    if (!selectedId) return null;
-    const set = new Set<string>([selectedId]);
+    if (!activeId) return null;
+    const set = new Set<string>([activeId]);
     for (const e of activeEdges) {
-      if (e.source === selectedId) set.add(e.target);
-      if (e.target === selectedId) set.add(e.source);
+      if (e.source === activeId) set.add(e.target);
+      if (e.target === activeId) set.add(e.source);
     }
     return set;
-  }, [selectedId, activeEdges]);
+  }, [activeId, activeEdges]);
 
-  // 표시용 노드 — hidden/selected/dimmed 반영 (위치는 state에서 유지)
+  // 강조 노드가 속한 부위 — 실루엣 글로우를 밝힌다
+  const activeZone = useMemo(
+    () => data.nodes.find((n) => n.id === activeId)?.layoutZone ?? null,
+    [data.nodes, activeId]
+  );
+
+  // 표시용 노드 — hidden/active/selected/dimmed 반영 (위치는 state에서 유지)
   const renderNodes: Node[] = useMemo(
     () =>
       nodes.map((n) => {
@@ -119,37 +144,50 @@ function AtlasInner({ data }: { data: AtlasData }) {
         return {
           ...n,
           hidden: !visibleNodeIds.has(n.id),
-          data: { ...n.data, selected: n.id === selectedId, dimmed },
+          data: {
+            ...n.data,
+            active: n.id === activeId,
+            selected: n.id === selectedId,
+            dimmed,
+          },
         };
       }),
-    [nodes, visibleNodeIds, neighborIds, selectedId]
+    [nodes, visibleNodeIds, neighborIds, activeId, selectedId]
   );
 
-  // 표시용 엣지 — 대표 타입 색, 선택 시 하이라이트/디밍
+  // 표시용 엣지 — 대표 타입 색, 강조 노드에 닿는 엣지만 또렷
   const renderEdges: Edge[] = useMemo(
     () =>
       activeEdges.map((e) => {
-        const touchesSelected =
-          !!selectedId && (e.source === selectedId || e.target === selectedId);
-        const dimmed = !!selectedId && !touchesSelected;
+        const touchesActive =
+          !!activeId && (e.source === activeId || e.target === activeId);
+        const dimmed = !!activeId && !touchesActive;
         const color = EDGE_COLORS[e.primary];
         return {
           id: e.id,
           source: e.source,
           target: e.target,
-          animated: e.primary === "relation",
+          animated: e.primary === "relation" || touchesActive,
           style: {
             stroke: color,
-            strokeWidth: touchesSelected ? 2.5 : 1.4,
-            opacity: dimmed ? 0.08 : e.primary === "bodypart" ? 0.4 : 0.7,
+            strokeWidth: touchesActive ? 2.6 : 1.4,
+            opacity: dimmed ? 0.06 : e.primary === "bodypart" ? 0.4 : 0.72,
           },
         };
       }),
-    [activeEdges, selectedId]
+    [activeEdges, activeId]
   );
 
   const onNodeClick: NodeMouseHandler = useCallback((_, node) => {
     setSelectedId(node.id);
+  }, []);
+
+  const onNodeMouseEnter: NodeMouseHandler = useCallback((_, node) => {
+    setHoveredId(node.id);
+  }, []);
+
+  const onNodeMouseLeave: NodeMouseHandler = useCallback(() => {
+    setHoveredId(null);
   }, []);
 
   const toggleZone = useCallback((zone: string) => {
@@ -191,6 +229,8 @@ function AtlasInner({ data }: { data: AtlasData }) {
           nodeTypes={nodeTypes}
           onNodesChange={onNodesChange}
           onNodeClick={onNodeClick}
+          onNodeMouseEnter={onNodeMouseEnter}
+          onNodeMouseLeave={onNodeMouseLeave}
           onPaneClick={() => setSelectedId(null)}
           fitView
           fitViewOptions={{ padding: 0.2 }}
@@ -209,6 +249,7 @@ function AtlasInner({ data }: { data: AtlasData }) {
             bodyParts={data.bodyParts}
             nodes={data.nodes}
             visibleZones={visibleZones}
+            activeZone={activeZone}
           />
         </ReactFlow>
         <DetailPanel
