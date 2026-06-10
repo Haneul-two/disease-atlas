@@ -8,6 +8,7 @@ import {
   Background,
   BackgroundVariant,
   Controls,
+  useReactFlow,
   type Node,
   type Edge,
   type NodeMouseHandler,
@@ -21,6 +22,7 @@ import DiseaseNode from "./DiseaseNode";
 import Silhouette from "./Silhouette";
 import FilterBar from "./FilterBar";
 import DetailPanel from "./DetailPanel";
+import SearchBox from "./SearchBox";
 
 const nodeTypes = { disease: DiseaseNode };
 
@@ -34,6 +36,25 @@ function AtlasInner({ data }: { data: AtlasData }) {
     new Set<EdgeType>(["relation", "symptom"])
   );
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const { setCenter } = useReactFlow();
+
+  // 검색/관련 질환에서 노드로 점프 — 부위가 숨겨져 있으면 켜고, 선택 + 화면 중앙 이동.
+  const focusNode = useCallback(
+    (nodeId: string) => {
+      const target = data.nodes.find((n) => n.id === nodeId);
+      if (!target) return;
+      setVisibleZones((prev) =>
+        prev.has(target.layoutZone) ? prev : new Set(prev).add(target.layoutZone)
+      );
+      setSelectedId(nodeId);
+      // 노드 좌표는 좌상단 기준 — 대략적인 노드 중심으로 보정해 중앙 정렬.
+      setCenter(target.position.x + 60, target.position.y + 18, {
+        zoom: 1.2,
+        duration: 600,
+      });
+    },
+    [data.nodes, setCenter]
+  );
 
   // 초기 노드 (좌표·data) — 드래그 이동을 위해 useNodesState로 관리.
   // 등장 애니메이션 딜레이를 부위 순서→부위 내 순번으로 stagger.
@@ -194,8 +215,9 @@ function AtlasInner({ data }: { data: AtlasData }) {
           node={selectedNode}
           data={data}
           onClose={() => setSelectedId(null)}
-          onSelectRelated={setSelectedId}
+          onSelectRelated={focusNode}
         />
+        <SearchBox nodes={data.nodes} onSelect={focusNode} />
       </div>
     </div>
   );
