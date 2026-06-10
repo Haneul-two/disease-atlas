@@ -1,0 +1,189 @@
+"use client";
+// Atlas 메인 캔버스 — React Flow로 질병 노드를 해부학적으로 배치하고,
+// 부위/엣지 필터·선택 하이라이트·상세 패널을 연결한다.
+import { useCallback, useMemo, useState } from "react";
+import {
+  ReactFlow,
+  ReactFlowProvider,
+  Background,
+  Controls,
+  type Node,
+  type Edge,
+  type NodeMouseHandler,
+  useNodesState,
+} from "@xyflow/react";
+import "@xyflow/react/dist/style.css";
+
+import type { AtlasData, EdgeType } from "@/lib/atlas-types";
+import { EDGE_COLORS } from "@/lib/atlas-types";
+import DiseaseNode from "./DiseaseNode";
+import Silhouette from "./Silhouette";
+import FilterBar from "./FilterBar";
+import DetailPanel from "./DetailPanel";
+
+const nodeTypes = { disease: DiseaseNode };
+
+function AtlasInner({ data }: { data: AtlasData }) {
+  const allZones = useMemo(
+    () => new Set(data.bodyParts.map((b) => b.layoutZone)),
+    [data.bodyParts]
+  );
+  const [visibleZones, setVisibleZones] = useState<Set<string>>(allZones);
+  const [enabledEdges, setEnabledEdges] = useState<Set<EdgeType>>(
+    new Set<EdgeType>(["relation", "symptom"])
+  );
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+
+  // 초기 노드 (좌표·data) — 드래그 이동을 위해 useNodesState로 관리
+  const [nodes, , onNodesChange] = useNodesState<Node>(
+    data.nodes.map((n) => ({
+      id: n.id,
+      type: "disease",
+      position: n.position,
+      data: { label: n.name, color: n.color, bodyPartName: n.bodyPartName },
+    }))
+  );
+
+  // 현재 보이는 노드 id
+  const visibleNodeIds = useMemo(() => {
+    const set = new Set<string>();
+    for (const n of data.nodes) if (visibleZones.has(n.layoutZone)) set.add(n.id);
+    return set;
+  }, [data.nodes, visibleZones]);
+
+  // 활성 엣지(타입 필터 + 양 끝 노드 보임)
+  const activeEdges = useMemo(
+    () =>
+      data.edges.filter(
+        (e) =>
+          e.types.some((t) => enabledEdges.has(t)) &&
+          visibleNodeIds.has(e.source) &&
+          visibleNodeIds.has(e.target)
+      ),
+    [data.edges, enabledEdges, visibleNodeIds]
+  );
+
+  // 선택 노드의 이웃 (디밍 계산용)
+  const neighborIds = useMemo(() => {
+    if (!selectedId) return null;
+    const set = new Set<string>([selectedId]);
+    for (const e of activeEdges) {
+      if (e.source === selectedId) set.add(e.target);
+      if (e.target === selectedId) set.add(e.source);
+    }
+    return set;
+  }, [selectedId, activeEdges]);
+
+  // 표시용 노드 — hidden/selected/dimmed 반영 (위치는 state에서 유지)
+  const renderNodes: Node[] = useMemo(
+    () =>
+      nodes.map((n) => {
+        const dimmed = neighborIds ? !neighborIds.has(n.id) : false;
+        return {
+          ...n,
+          hidden: !visibleNodeIds.has(n.id),
+          data: { ...n.data, selected: n.id === selectedId, dimmed },
+        };
+      }),
+    [nodes, visibleNodeIds, neighborIds, selectedId]
+  );
+
+  // 표시용 엣지 — 대표 타입 색, 선택 시 하이라이트/디밍
+  const renderEdges: Edge[] = useMemo(
+    () =>
+      activeEdges.map((e) => {
+        const touchesSelected =
+          !!selectedId && (e.source === selectedId || e.target === selectedId);
+        const dimmed = !!selectedId && !touchesSelected;
+        const color = EDGE_COLORS[e.primary];
+        return {
+          id: e.id,
+          source: e.source,
+          target: e.target,
+          animated: e.primary === "relation",
+          style: {
+            stroke: color,
+            strokeWidth: touchesSelected ? 2.5 : 1.4,
+            opacity: dimmed ? 0.08 : e.primary === "bodypart" ? 0.4 : 0.7,
+          },
+        };
+      }),
+    [activeEdges, selectedId]
+  );
+
+  const onNodeClick: NodeMouseHandler = useCallback((_, node) => {
+    setSelectedId(node.id);
+  }, []);
+
+  const toggleZone = useCallback((zone: string) => {
+    setVisibleZones((prev) => {
+      const next = new Set(prev);
+      if (next.has(zone)) next.delete(zone);
+      else next.add(zone);
+      return next;
+    });
+  }, []);
+
+  const toggleEdge = useCallback((type: EdgeType) => {
+    setEnabledEdges((prev) => {
+      const next = new Set(prev);
+      if (next.has(type)) next.delete(type);
+      else next.add(type);
+      return next;
+    });
+  }, []);
+
+  const selectedNode = useMemo(
+    () => data.nodes.find((n) => n.id === selectedId) ?? null,
+    [data.nodes, selectedId]
+  );
+
+  return (
+    <div className="flex h-full flex-col">
+      <FilterBar
+        bodyParts={data.bodyParts}
+        visibleZones={visibleZones}
+        toggleZone={toggleZone}
+        enabledEdges={enabledEdges}
+        toggleEdge={toggleEdge}
+      />
+      <div className="relative flex-1">
+        <ReactFlow
+          nodes={renderNodes}
+          edges={renderEdges}
+          nodeTypes={nodeTypes}
+          onNodesChange={onNodesChange}
+          onNodeClick={onNodeClick}
+          onPaneClick={() => setSelectedId(null)}
+          fitView
+          fitViewOptions={{ padding: 0.2 }}
+          minZoom={0.2}
+          maxZoom={2.5}
+          proOptions={{ hideAttribution: true }}
+        >
+          <Background gap={28} size={1} color="var(--rf-dots)" />
+          <Controls showInteractive={false} />
+          <Silhouette
+            bodyParts={data.bodyParts}
+            nodes={data.nodes}
+            visibleZones={visibleZones}
+          />
+        </ReactFlow>
+        <DetailPanel
+          node={selectedNode}
+          data={data}
+          onClose={() => setSelectedId(null)}
+          onSelectRelated={setSelectedId}
+        />
+      </div>
+    </div>
+  );
+}
+
+export default function AtlasFlow({ data }: { data: AtlasData }) {
+  return (
+    <ReactFlowProvider>
+      <AtlasInner data={data} />
+    </ReactFlowProvider>
+  );
+}

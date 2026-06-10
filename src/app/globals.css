@@ -3,6 +3,10 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  --node-bg: #ffffff;
+  --node-fg: #1f2937;
+  --silhouette: rgba(100, 116, 139, 0.07);
+  --rf-dots: #e5e7eb;
 }
 
 @theme inline {
@@ -16,6 +20,10 @@
   :root {
     --background: #0a0a0a;
     --foreground: #ededed;
+    --node-bg: #18181b;
+    --node-fg: #e4e4e7;
+    --silhouette: rgba(148, 163, 184, 0.08);
+    --rf-dots: #27272a;
   }
 }
 

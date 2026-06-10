@@ -15,3 +15,6 @@ dist/
 *.sqlite
 
 /src/generated/prisma
+
+# typescript build cache
+*.tsbuildinfo
