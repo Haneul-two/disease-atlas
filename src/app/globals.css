@@ -1,34 +1,129 @@
 @import "tailwindcss";
 
+/*
+  질병 아틀라스 — "해부 도판(Anatomical Plate)" 테마
+  잉크빛 다크 캔버스 + 본/파치먼트 액센트. 단일 다크 테마로 커밋.
+*/
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-  --node-bg: #ffffff;
-  --node-fg: #1f2937;
-  --silhouette: rgba(100, 116, 139, 0.07);
-  --rf-dots: #e5e7eb;
+  /* 잉크 계열 (배경/표면) */
+  --ink-900: #0a0d11;
+  --ink-850: #0d1117; /* 캔버스 베이스 */
+  --ink-800: #11161d; /* 표면 */
+  --ink-750: #151b23; /* 상승 표면 */
+  --ink-700: #1b222b;
+
+  /* 라인 (본빛 헤어라인) */
+  --line: rgba(214, 199, 165, 0.1);
+  --line-strong: rgba(214, 199, 165, 0.2);
+  --grid: rgba(203, 184, 147, 0.05);
+
+  /* 잉크 텍스트 (따뜻한 파치먼트) */
+  --paper: #e9e3d6;
+  --paper-dim: #b8b1a1;
+  --muted: #79828f;
+
+  /* 에디토리얼 액센트 (본/파치먼트) */
+  --bone: #cbb893;
+  --bone-bright: #e7d6ac;
+
+  /* 컴포넌트 토큰 */
+  --background: var(--ink-850);
+  --foreground: var(--paper);
+  --node-bg: rgba(17, 22, 29, 0.92);
+  --node-fg: var(--paper);
+  --silhouette: rgba(203, 184, 147, 0.055);
+  --rf-dots: rgba(203, 184, 147, 0.06);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-display: var(--f-fraunces);
+  --font-display-ko: var(--f-gowun);
+  --font-sans: var(--f-plex-kr), var(--f-fraunces), sans-serif;
+  --font-mono: var(--f-plex-mono), monospace;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-    --node-bg: #18181b;
-    --node-fg: #e4e4e7;
-    --silhouette: rgba(148, 163, 184, 0.08);
-    --rf-dots: #27272a;
-  }
+html {
+  color-scheme: dark;
 }
 
 body {
-  background: var(--background);
+  background-color: var(--ink-850);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--f-plex-kr), system-ui, sans-serif;
+  /* 깊이감: 본빛 비네트 + 미세 그레인 */
+  background-image:
+    radial-gradient(120% 90% at 50% -10%, rgba(203, 184, 147, 0.06), transparent 55%),
+    radial-gradient(100% 120% at 100% 110%, rgba(91, 183, 173, 0.05), transparent 50%),
+    radial-gradient(100% 120% at 0% 110%, rgba(224, 96, 122, 0.04), transparent 50%);
+  background-attachment: fixed;
 }
+
+/* 종이 그레인 오버레이 (전 화면, 비간섭) */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.04;
+  mix-blend-mode: screen;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* 유틸 폰트 클래스 */
+.font-display { font-family: var(--f-fraunces), serif; }
+.font-display-ko { font-family: var(--f-gowun), serif; }
+.font-mono { font-family: var(--f-plex-mono), monospace; }
+
+/* ── 모션 ───────────────────────────────────────── */
+
+/* 노드 등장 — 도판이 현상되듯 페이드+스케일 */
+@keyframes atlas-in {
+  from { opacity: 0; transform: scale(0.82); filter: blur(2px); }
+  to { opacity: 1; transform: scale(1); filter: blur(0); }
+}
+
+/* 인스펙션 카드 슬라이드 */
+@keyframes panel-in {
+  from { opacity: 0; transform: translateX(24px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+/* 헤어라인 그어지는 효과 */
+@keyframes rule-draw {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; }
+}
+
+/* 노드 호버 — 살짝 들어올림 */
+.atlas-node:hover { transform: translateY(-2px); cursor: pointer; }
+
+/* ── React Flow 표면 톤 보정 ───────────────────── */
+.react-flow,
+.react-flow__renderer,
+.react-flow__pane {
+  background: transparent;
+}
+.react-flow__controls {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.45);
+}
+.react-flow__controls-button {
+  background: var(--ink-800);
+  border-bottom: 1px solid var(--line);
+  color: var(--paper-dim);
+}
+.react-flow__controls-button:hover {
+  background: var(--ink-700);
+  color: var(--bone-bright);
+}
+.react-flow__controls-button svg { fill: currentColor; }

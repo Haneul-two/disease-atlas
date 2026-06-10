@@ -1,5 +1,5 @@
 "use client";
-// 우측 상세 패널 — 선택한 질병의 용어·증상·치료법·관련 질환.
+// 우측 인스펙션 카드 — 표본 카탈로그 항목처럼 질병을 펼쳐 보인다.
 import type { AtlasData, AtlasNode } from "@/lib/atlas-types";
 import Disclaimer from "./Disclaimer";
 
@@ -13,7 +13,6 @@ type Props = {
 export default function DetailPanel({ node, data, onClose, onSelectRelated }: Props) {
   if (!node) return null;
 
-  // 관련 질환 = 수동 관계(relation) 엣지로 이 노드와 연결된 질병들
   const related = data.edges
     .filter((e) => e.types.includes("relation") && (e.source === node.id || e.target === node.id))
     .map((e) => {
@@ -23,49 +22,68 @@ export default function DetailPanel({ node, data, onClose, onSelectRelated }: Pr
     })
     .filter((x): x is { node: AtlasNode; note: string | null | undefined } => x !== null);
 
+  const c = node.color;
+
   return (
-    <aside className="absolute right-0 top-0 z-20 flex h-full w-[min(380px,90vw)] flex-col border-l border-black/10 bg-white shadow-xl dark:border-white/10 dark:bg-zinc-950">
+    <aside
+      key={node.id}
+      className="absolute right-0 top-0 z-20 flex h-full w-[min(390px,92vw)] flex-col border-l border-[var(--line)] bg-[var(--ink-800)]/95 shadow-[0_0_60px_rgba(0,0,0,0.6)] backdrop-blur-md"
+      style={{ animation: "panel-in 0.34s cubic-bezier(0.22, 1, 0.36, 1) both" }}
+    >
+      {/* 부위색 상단 인레이 */}
+      <span
+        className="absolute left-0 top-0 h-full w-px"
+        style={{ background: `linear-gradient(to bottom, ${c}, transparent 60%)` }}
+      />
+
       {/* 헤더 */}
-      <div className="flex items-start justify-between gap-3 border-b border-black/5 p-4 dark:border-white/10">
-        <div>
-          <div className="mb-1 flex items-center gap-2">
-            <span
-              className="rounded-full px-2 py-0.5 text-xs font-semibold"
-              style={{ color: node.color, background: `${node.color}1a` }}
-            >
-              {node.bodyPartName}
-            </span>
-            {node.categoryName && (
-              <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-xs text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">
-                {node.categoryName}
-              </span>
-            )}
-          </div>
-          <h2 className="text-xl font-bold tracking-tight">{node.name}</h2>
-        </div>
+      <div className="relative px-5 pt-5 pb-4">
         <button
           onClick={onClose}
           aria-label="닫기"
-          className="rounded-md p-1 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-700 dark:hover:bg-zinc-800"
+          className="absolute right-4 top-4 rounded-md p-1 text-[var(--muted)] transition-colors hover:bg-[var(--ink-700)] hover:text-[var(--bone-bright)]"
         >
           ✕
         </button>
+
+        {/* 에이브로우 — 표본 메타 */}
+        <div
+          className="mb-2.5 flex items-center gap-2 text-[10px] uppercase tracking-[0.2em]"
+          style={{ fontFamily: "var(--f-plex-mono)", color: "var(--muted)" }}
+        >
+          <span style={{ color: c }}>● {node.bodyPartName}</span>
+          {node.categoryName && (
+            <>
+              <span className="text-[var(--line-strong)]">/</span>
+              <span>{node.categoryName}</span>
+            </>
+          )}
+        </div>
+
+        <h2
+          className="text-[27px] leading-tight text-[var(--paper)]"
+          style={{ fontFamily: "var(--f-gowun)", fontWeight: 700 }}
+        >
+          {node.name}
+        </h2>
+        <span className="mt-3 block h-px w-full bg-[var(--line)]" />
       </div>
 
       {/* 본문 */}
-      <div className="flex-1 space-y-5 overflow-y-auto p-4">
-        <Section title="설명">
-          <p className="text-sm leading-relaxed text-zinc-700 dark:text-zinc-300">
+      <div className="flex-1 space-y-6 overflow-y-auto px-5 pb-6">
+        <Section index="01" title="설명 · Definition">
+          <p className="text-[14px] leading-relaxed text-[var(--paper-dim)]">
             {node.description}
           </p>
         </Section>
 
-        <Section title="주요 증상">
+        <Section index="02" title="주요 증상 · Symptoms">
           <div className="flex flex-wrap gap-1.5">
             {node.symptoms.map((s) => (
               <span
                 key={s}
-                className="rounded-md bg-teal-50 px-2 py-1 text-xs font-medium text-teal-700 dark:bg-teal-950/50 dark:text-teal-300"
+                className="rounded border border-[#5bb7ad55] bg-[#5bb7ad14] px-2 py-1 text-[12px] text-[#8fd0c7]"
+                style={{ fontFamily: "var(--f-plex-kr)" }}
               >
                 {s}
               </span>
@@ -73,29 +91,34 @@ export default function DetailPanel({ node, data, onClose, onSelectRelated }: Pr
           </div>
         </Section>
 
-        <Section title="치료법">
-          <p className="text-sm leading-relaxed text-zinc-700 dark:text-zinc-300">
+        <Section index="03" title="치료법 · Treatment">
+          <p className="text-[14px] leading-relaxed text-[var(--paper-dim)]">
             {node.treatment}
           </p>
         </Section>
 
         {related.length > 0 && (
-          <Section title="관련 질환">
-            <ul className="space-y-1.5">
+          <Section index="04" title="관련 질환 · Related">
+            <ul className="-mx-2 space-y-0.5">
               {related.map(({ node: r, note }) => (
                 <li key={r.id}>
                   <button
                     onClick={() => onSelectRelated(r.id)}
-                    className="group flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                    className="group flex w-full items-center gap-2.5 rounded-md px-2 py-2 text-left transition-colors hover:bg-[var(--ink-700)]"
                   >
                     <span
-                      className="h-2.5 w-2.5 shrink-0 rounded-full"
-                      style={{ background: r.color }}
+                      className="h-2 w-2 shrink-0 rounded-full"
+                      style={{ background: r.color, boxShadow: `0 0 6px ${r.color}aa` }}
                     />
-                    <span className="text-sm font-medium group-hover:underline">{r.name}</span>
+                    <span className="text-[13.5px] font-medium text-[var(--paper)] group-hover:text-[var(--bone-bright)]">
+                      {r.name}
+                    </span>
                     {note && (
-                      <span className="truncate text-xs text-zinc-400">— {note}</span>
+                      <span className="truncate text-[11px] text-[var(--muted)]">— {note}</span>
                     )}
+                    <span className="ml-auto text-[var(--muted)] opacity-0 transition-opacity group-hover:opacity-100">
+                      →
+                    </span>
                   </button>
                 </li>
               ))}
@@ -105,17 +128,30 @@ export default function DetailPanel({ node, data, onClose, onSelectRelated }: Pr
       </div>
 
       {/* 고지 */}
-      <div className="border-t border-black/5 bg-amber-50/60 p-3 dark:border-white/10 dark:bg-amber-950/20">
+      <div className="border-t border-[var(--line)] bg-[var(--ink-850)] px-5 py-3.5">
         <Disclaimer />
       </div>
     </aside>
   );
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Section({
+  index,
+  title,
+  children,
+}: {
+  index: string;
+  title: string;
+  children: React.ReactNode;
+}) {
   return (
     <section>
-      <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-zinc-400">
+      <h3
+        className="mb-2.5 flex items-center gap-2 text-[10px] uppercase tracking-[0.18em] text-[var(--muted)]"
+        style={{ fontFamily: "var(--f-plex-mono)" }}
+      >
+        <span className="text-[var(--bone)]">{index}</span>
+        <span className="h-px flex-1 bg-[var(--line)]" />
         {title}
       </h3>
       {children}

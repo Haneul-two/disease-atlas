@@ -2,10 +2,11 @@
 export default function Disclaimer({ className = "" }: { className?: string }) {
   return (
     <p
-      className={`text-xs leading-relaxed text-amber-700 dark:text-amber-400/90 ${className}`}
+      className={`text-[11px] leading-relaxed text-[var(--muted)] ${className}`}
+      style={{ fontFamily: "var(--f-plex-kr)" }}
     >
-      ⚠️ 이 사이트는 <strong>교육용</strong>이며 의학적 조언이 아닙니다. 진단·치료는
-      반드시 전문 의료인과 상담하세요.
+      <span className="text-[var(--bone)]">⚠ 교육용 자료</span> · 의학적 조언이 아닙니다.
+      진단·치료는 반드시 전문 의료인과 상담하세요.
     </p>
   );
 }

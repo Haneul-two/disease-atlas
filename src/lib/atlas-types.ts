@@ -48,12 +48,12 @@ export type AtlasData = {
   bodyParts: AtlasBodyPart[];
 };
 
-/** 엣지 타입별 표시 색상 */
+/** 엣지 타입별 표시 색상 (잉크 도판 톤) */
 export const EDGE_COLORS: Record<EdgeType, string> = {
-  relation: "#f43f5e", // 합병/연관 (수동) — 로즈
-  symptom: "#14b8a6", // 공통 증상 — 틸
-  category: "#a78bfa", // 같은 계통 — 바이올렛
-  bodypart: "#94a3b8", // 같은 부위 — 슬레이트(흐릿)
+  relation: "#e0607a", // 합병/연관 (수동) — 로즈
+  symptom: "#5bb7ad", // 공통 증상 — 틸
+  category: "#9b8cd6", // 같은 계통 — 바이올렛
+  bodypart: "#6b7280", // 같은 부위 — 슬레이트(흐릿)
 };
 
 /** 엣지 타입별 한국어 라벨 */

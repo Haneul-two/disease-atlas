@@ -6,6 +6,7 @@ import {
   ReactFlow,
   ReactFlowProvider,
   Background,
+  BackgroundVariant,
   Controls,
   type Node,
   type Edge,
@@ -34,14 +35,29 @@ function AtlasInner({ data }: { data: AtlasData }) {
   );
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
-  // 초기 노드 (좌표·data) — 드래그 이동을 위해 useNodesState로 관리
+  // 초기 노드 (좌표·data) — 드래그 이동을 위해 useNodesState로 관리.
+  // 등장 애니메이션 딜레이를 부위 순서→부위 내 순번으로 stagger.
   const [nodes, , onNodesChange] = useNodesState<Node>(
-    data.nodes.map((n) => ({
-      id: n.id,
-      type: "disease",
-      position: n.position,
-      data: { label: n.name, color: n.color, bodyPartName: n.bodyPartName },
-    }))
+    (() => {
+      const zoneOrder = ["head", "chest", "abdomen", "limbs", "endocrine"];
+      const within = new Map<string, number>();
+      return data.nodes.map((n) => {
+        const i = within.get(n.layoutZone) ?? 0;
+        within.set(n.layoutZone, i + 1);
+        const zi = Math.max(0, zoneOrder.indexOf(n.layoutZone));
+        return {
+          id: n.id,
+          type: "disease",
+          position: n.position,
+          data: {
+            label: n.name,
+            color: n.color,
+            bodyPartName: n.bodyPartName,
+            appearDelay: zi * 130 + i * 45,
+          },
+        };
+      });
+    })()
   );
 
   // 현재 보이는 노드 id
@@ -161,7 +177,12 @@ function AtlasInner({ data }: { data: AtlasData }) {
           maxZoom={2.5}
           proOptions={{ hideAttribution: true }}
         >
-          <Background gap={28} size={1} color="var(--rf-dots)" />
+          <Background
+            variant={BackgroundVariant.Cross}
+            gap={36}
+            size={6}
+            color="var(--rf-dots)"
+          />
           <Controls showInteractive={false} />
           <Silhouette
             bodyParts={data.bodyParts}
