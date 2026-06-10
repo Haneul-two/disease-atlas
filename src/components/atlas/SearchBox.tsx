@@ -103,7 +103,7 @@ export default function SearchBox({ nodes, onSelect }: Props) {
     return (
       <button
         onClick={openSearch}
-        className="absolute left-1/2 top-3 z-30 flex -translate-x-1/2 items-center gap-2 rounded-full border border-[var(--line)] bg-[var(--ink-800)]/85 px-4 py-1.5 text-[12.5px] text-[var(--muted)] shadow-lg backdrop-blur-md transition-colors hover:border-[var(--line-strong)] hover:text-[var(--paper-dim)]"
+        className="absolute left-1/2 top-3 z-10 flex -translate-x-1/2 items-center gap-2 rounded-full border border-[var(--line)] bg-[var(--ink-800)]/85 px-4 py-1.5 text-[12.5px] text-[var(--muted)] shadow-lg backdrop-blur-md transition-colors hover:border-[var(--line-strong)] hover:text-[var(--paper-dim)]"
         style={{ fontFamily: "var(--f-plex-kr)" }}
       >
         <span className="text-[13px]">⌕</span>
