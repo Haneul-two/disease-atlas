@@ -10,7 +10,7 @@ type ZoneConfig = { cx: number; cy: number; cols: number; gapX: number; gapY: nu
 
 const ZONE_LAYOUT: Record<string, ZoneConfig> = {
   head: { cx: 470, cy: 215, cols: 4, gapX: 132, gapY: 86 }, // 머리~목덜미 = 뇌·신경
-  endocrine: { cx: 772, cy: 470, cols: 2, gapX: 120, gapY: 84 }, // 우측 오프셋(목·샘) = 내분비
+  endocrine: { cx: 800, cy: 478, cols: 2, gapX: 120, gapY: 84 }, // 우측 오프셋(목·샘) = 내분비
   chest: { cx: 470, cy: 540, cols: 3, gapX: 132, gapY: 86 }, // 가슴
   abdomen: { cx: 470, cy: 790, cols: 3, gapX: 132, gapY: 86 }, // 복부
   limbs: { cx: 470, cy: 1040, cols: 4, gapX: 132, gapY: 86 }, // 다리·척추 = 관절
@@ -18,8 +18,19 @@ const ZONE_LAYOUT: Record<string, ZoneConfig> = {
 
 const FALLBACK_ZONE: ZoneConfig = { cx: 470, cy: 1240, cols: 4, gapX: 132, gapY: 86 };
 
+/** 결정적 지터 — 같은 입력이면 항상 같은 오프셋 (서버/클라 일치) */
+function jitter(seed: number): { jx: number; jy: number } {
+  const a = Math.sin(seed * 127.1 + 311.7) * 43758.5453;
+  const b = Math.sin(seed * 269.5 + 183.3) * 28001.8384;
+  return {
+    jx: (a - Math.floor(a) - 0.5) * 2, // -1 ~ 1
+    jy: (b - Math.floor(b) - 0.5) * 2,
+  };
+}
+
 /**
- * 한 부위(zone)에 속한 질병들을 그 구역 안에 격자로 배치한 좌표를 돌려준다.
+ * 한 부위(zone)에 속한 질병들을 그 구역 안에 배치한 좌표를 돌려준다.
+ * 격자 기반 + 행 교차 오프셋 + 결정적 지터 → 표가 아니라 별자리처럼 흩어진다.
  * @param zone layoutZone 키
  * @param count 그 zone의 질병 수
  * @returns index → {x, y}
@@ -28,13 +39,16 @@ export function zonePositions(zone: string, count: number): { x: number; y: numb
   const cfg = ZONE_LAYOUT[zone] ?? FALLBACK_ZONE;
   const cols = Math.min(cfg.cols, count) || 1;
   const rows = Math.ceil(count / cols);
+  const zoneSeed = zone.split("").reduce((h, ch) => h * 31 + ch.charCodeAt(0), 7);
   const out: { x: number; y: number }[] = [];
   for (let i = 0; i < count; i++) {
     const col = i % cols;
     const row = Math.floor(i / cols);
+    const { jx, jy } = jitter(zoneSeed + i * 17);
+    const rowShift = (row % 2 === 1 ? 0.5 : 0) * cfg.gapX * 0.6; // 벌집형 교차
     out.push({
-      x: Math.round(cfg.cx + (col - (cols - 1) / 2) * cfg.gapX),
-      y: Math.round(cfg.cy + (row - (rows - 1) / 2) * cfg.gapY),
+      x: Math.round(cfg.cx + (col - (cols - 1) / 2) * cfg.gapX + rowShift + jx * 22),
+      y: Math.round(cfg.cy + (row - (rows - 1) / 2) * cfg.gapY + jy * 16),
     });
   }
   return out;

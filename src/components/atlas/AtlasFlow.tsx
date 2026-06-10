@@ -32,8 +32,9 @@ function AtlasInner({ data }: { data: AtlasData }) {
     [data.bodyParts]
   );
   const [visibleZones, setVisibleZones] = useState<Set<string>>(allZones);
+  // 초기에는 핵심 관계(합병·연관)만 — 선이 너무 많으면 별자리가 아니라 실타래가 된다.
   const [enabledEdges, setEnabledEdges] = useState<Set<EdgeType>>(
-    new Set<EdgeType>(["relation", "symptom"])
+    new Set<EdgeType>(["relation"])
   );
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
@@ -65,8 +66,8 @@ function AtlasInner({ data }: { data: AtlasData }) {
         prev.has(target.layoutZone) ? prev : new Set(prev).add(target.layoutZone)
       );
       setSelectedId(nodeId);
-      // 노드 좌표는 좌상단 기준 — 대략적인 노드 중심으로 보정해 중앙 정렬.
-      setCenter(target.position.x + 60, target.position.y + 18, {
+      // 노드 좌표는 좌상단 기준 — 별(점) 중심으로 보정해 중앙 정렬.
+      setCenter(target.position.x + 48, target.position.y + 12, {
         zoom: 1.2,
         duration: 600,
       });
@@ -155,7 +156,7 @@ function AtlasInner({ data }: { data: AtlasData }) {
     [nodes, visibleNodeIds, neighborIds, activeId, selectedId]
   );
 
-  // 표시용 엣지 — 대표 타입 색, 강조 노드에 닿는 엣지만 또렷
+  // 표시용 엣지 — 별자리 선: 평소엔 아주 희미한 직선, 강조 노드에 닿는 선만 점등
   const renderEdges: Edge[] = useMemo(
     () =>
       activeEdges.map((e) => {
@@ -163,15 +164,18 @@ function AtlasInner({ data }: { data: AtlasData }) {
           !!activeId && (e.source === activeId || e.target === activeId);
         const dimmed = !!activeId && !touchesActive;
         const color = EDGE_COLORS[e.primary];
+        const restOpacity =
+          e.primary === "relation" ? 0.3 : e.primary === "symptom" ? 0.16 : 0.1;
         return {
           id: e.id,
           source: e.source,
           target: e.target,
-          animated: e.primary === "relation" || touchesActive,
+          type: "straight",
+          animated: touchesActive,
           style: {
             stroke: color,
-            strokeWidth: touchesActive ? 2.6 : 1.4,
-            opacity: dimmed ? 0.06 : e.primary === "bodypart" ? 0.4 : 0.72,
+            strokeWidth: touchesActive ? 1.8 : 1,
+            opacity: dimmed ? 0.03 : touchesActive ? 0.95 : restOpacity,
           },
         };
       }),
@@ -238,10 +242,11 @@ function AtlasInner({ data }: { data: AtlasData }) {
           maxZoom={2.5}
           proOptions={{ hideAttribution: true }}
         >
+          {/* 별먼지 — 미세한 점 그리드 */}
           <Background
-            variant={BackgroundVariant.Cross}
-            gap={36}
-            size={6}
+            variant={BackgroundVariant.Dots}
+            gap={30}
+            size={1}
             color="var(--rf-dots)"
           />
           <Controls showInteractive={false} />
