@@ -205,6 +205,136 @@ const diseases: DiseaseSeed[] = [
     treatment: "항갑상선제, 방사성요오드, 일부는 수술.",
     symptoms: ["체중감소", "두근거림", "손떨림"],
   },
+
+  // ── 노인성 질병 보강 (뇌·신경: 뇌혈관·치매·운동질환) ──
+  {
+    slug: "vascular-dementia", name: "혈관성치매", bodyPart: "brain", category: "vascular",
+    description: "뇌혈관 손상이 누적되어 인지 기능이 단계적으로 저하되는 치매.",
+    treatment: "고혈압·당뇨 등 혈관 위험인자 관리가 핵심, 인지·재활 치료 병행.",
+    symptoms: ["인지저하", "기억력저하", "보행장애"],
+  },
+  {
+    slug: "subarachnoid-hemorrhage", name: "지주막하출혈", bodyPart: "brain", category: "vascular",
+    description: "뇌동맥류 파열 등으로 지주막 아래 공간에 출혈이 생기는 응급 질환.",
+    treatment: "응급 수술·코일색전술로 출혈을 막고 재출혈·혈관연축을 관리.",
+    symptoms: ["벼락두통", "의식저하", "목경직"],
+  },
+  {
+    slug: "intracerebral-hemorrhage", name: "뇌내출혈", bodyPart: "brain", category: "vascular",
+    description: "뇌 실질 안의 혈관이 터져 출혈이 생기는 출혈성 뇌졸중.",
+    treatment: "혈압 조절과 뇌압 관리, 큰 혈종은 수술. 이후 재활.",
+    symptoms: ["편마비", "두통", "의식저하"],
+  },
+  {
+    slug: "cerebral-infarction", name: "뇌경색증", bodyPart: "brain", category: "vascular",
+    description: "뇌혈관이 막혀 혈류가 끊겨 뇌조직이 괴사하는 허혈성 뇌졸중.",
+    treatment: "골든타임 내 혈전용해·혈전제거, 항혈소판제와 위험인자 관리.",
+    symptoms: ["편마비", "언어장애", "어지럼"],
+  },
+  {
+    slug: "stroke-sequelae", name: "뇌졸중후유증", bodyPart: "brain", category: "vascular",
+    description: "뇌졸중 이후 남는 마비·언어·인지 장애 등 후유 상태(중풍후유증).",
+    treatment: "재활치료가 중심, 재발 예방을 위한 위험인자 관리.",
+    symptoms: ["편마비", "언어장애", "인지저하"],
+  },
+  {
+    slug: "secondary-parkinsonism", name: "이차성파킨슨증", bodyPart: "brain", category: "degenerative",
+    description: "약물·혈관 손상 등 원인이 있어 파킨슨병과 비슷한 증상이 나타나는 상태.",
+    treatment: "원인 약물 중단·기저질환 치료, 필요 시 도파민 약물.",
+    symptoms: ["떨림", "경직", "느린움직임"],
+  },
+  {
+    slug: "essential-tremor", name: "본태성진전", bodyPart: "brain", category: "degenerative",
+    description: "특별한 원인 없이 손 등이 규칙적으로 떨리는 가장 흔한 운동장애.",
+    treatment: "베타차단제 등 약물, 심하면 뇌심부자극술을 고려.",
+    symptoms: ["손떨림", "떨림"],
+  },
+  {
+    slug: "spinal-muscular-atrophy", name: "척수성근위축증", bodyPart: "brain", category: "degenerative",
+    description: "척수 운동신경세포가 변성되어 근육이 위축되고 약해지는 질환.",
+    treatment: "유전자·약물 치료와 재활·호흡 보조 등 다학제 관리.",
+    symptoms: ["근위축", "근력저하"],
+  },
+  {
+    slug: "multiple-sclerosis", name: "다발경화증", bodyPart: "brain", category: "autoimmune",
+    description: "중추신경 수초가 면역 공격으로 손상되어 재발·완화를 반복하는 자가면역 질환.",
+    treatment: "급성기 스테로이드, 재발 예방 면역조절제, 증상별 재활.",
+    symptoms: ["시력저하", "감각이상", "보행장애", "피로"],
+  },
+  {
+    slug: "nph", name: "정상압수두증", bodyPart: "brain", category: "degenerative",
+    description: "뇌척수액 순환 장애로 보행·인지·배뇨 장애가 나타나는, 호전 가능한 치매의 하나.",
+    treatment: "뇌실복강 단락술로 호전될 수 있어 조기 진단이 중요.",
+    symptoms: ["보행장애", "인지저하", "요실금"],
+  },
+
+  // ── 균형 보강: 가슴 ──
+  {
+    slug: "heart-failure", name: "심부전", bodyPart: "chest", category: "vascular",
+    description: "심장의 펌프 기능이 떨어져 온몸에 혈액을 충분히 보내지 못하는 상태.",
+    treatment: "원인질환 치료와 이뇨제·심장약, 염분·수분 제한 등 생활관리.",
+    symptoms: ["호흡곤란", "부종", "피로"],
+  },
+  {
+    slug: "pulmonary-tuberculosis", name: "폐결핵", bodyPart: "chest", category: "infection",
+    description: "결핵균이 폐에 감염되어 만성 기침·미열을 일으키는 호흡기 감염병.",
+    treatment: "표준 항결핵제를 6개월 이상 꾸준히 복용, 접촉자 관리.",
+    symptoms: ["기침", "발열", "체중감소"],
+  },
+
+  // ── 균형 보강: 복부 ──
+  {
+    slug: "stomach-cancer", name: "위암", bodyPart: "abdomen", category: "tumor",
+    description: "위 점막에서 생기는 악성 종양으로 조기에는 증상이 거의 없다.",
+    treatment: "내시경·수술 절제가 기본, 병기에 따라 항암치료. 정기 검진이 중요.",
+    symptoms: ["상복부통증", "체중감소", "소화불량"],
+  },
+  {
+    slug: "liver-cirrhosis", name: "간경변증", bodyPart: "abdomen", category: "degenerative",
+    description: "만성 간 손상이 누적되어 간이 굳고 기능이 떨어지는 진행성 질환.",
+    treatment: "원인(간염·음주) 제거와 합병증 관리, 중증은 간이식 고려.",
+    symptoms: ["황달", "복수", "피로"],
+  },
+  {
+    slug: "pancreatitis", name: "췌장염", bodyPart: "abdomen", category: "inflammatory",
+    description: "췌장에 염증이 생겨 심한 상복부 통증을 일으키는 질환.",
+    treatment: "금식·수액·진통과 원인(담석·음주) 교정. 중증은 입원치료.",
+    symptoms: ["상복부통증", "메스꺼움", "발열"],
+  },
+
+  // ── 균형 보강: 관절 ──
+  {
+    slug: "spinal-stenosis", name: "척추관협착증", bodyPart: "joint", category: "degenerative",
+    description: "척추관이 좁아져 신경을 눌러 다리 저림과 보행 장애를 일으키는 퇴행성 질환.",
+    treatment: "약물·운동·주사 치료, 심하면 감압 수술.",
+    symptoms: ["허리통증", "다리저림", "보행장애"],
+  },
+  {
+    slug: "herniated-disc", name: "추간판탈출증", bodyPart: "joint", category: "degenerative",
+    description: "디스크가 튀어나와 신경을 눌러 통증·저림을 일으키는 흔한 척추 질환.",
+    treatment: "안정·약물·물리치료, 호전이 없으면 신경차단·수술.",
+    symptoms: ["허리통증", "다리저림"],
+  },
+  {
+    slug: "frozen-shoulder", name: "오십견", bodyPart: "joint", category: "inflammatory",
+    description: "어깨 관절막에 염증과 유착이 생겨 통증과 운동 제한이 오는 질환.",
+    treatment: "스트레칭·물리치료가 핵심, 통증이 심하면 주사·약물.",
+    symptoms: ["어깨통증", "운동제한"],
+  },
+
+  // ── 균형 보강: 내분비 ──
+  {
+    slug: "dyslipidemia", name: "고지혈증", bodyPart: "endocrine", category: "metabolic",
+    description: "혈중 콜레스테롤·중성지방이 높아 동맥경화 위험을 키우는 대사 이상.",
+    treatment: "식이·운동, 필요 시 스타틴 등 지질강하제.",
+    symptoms: ["무증상", "황색종"],
+  },
+  {
+    slug: "obesity", name: "비만", bodyPart: "endocrine", category: "metabolic",
+    description: "체지방이 과도하게 축적되어 여러 만성질환 위험을 높이는 상태.",
+    treatment: "식이·운동·행동요법, 필요 시 약물·수술.",
+    symptoms: ["체중증가", "피로"],
+  },
 ];
 
 // 합병/연관 질환 (수동 관계 엣지)
@@ -217,6 +347,32 @@ const relations: { from: string; to: string; type: string; note?: string }[] = [
   { from: "gastritis", to: "peptic-ulcer", type: "progression", note: "만성 위염이 궤양으로 진행 가능" },
   { from: "hyperthyroidism", to: "arrhythmia", type: "comorbidity", note: "갑상선 항진은 부정맥을 유발할 수 있음" },
   { from: "rheumatoid-arthritis", to: "osteoporosis", type: "comorbidity", note: "만성 염증·스테로이드로 골다공증 위험 증가" },
+
+  // ── 노인성·뇌혈관 관계도 ──
+  { from: "hypertension", to: "intracerebral-hemorrhage", type: "comorbidity", note: "고혈압은 뇌내출혈의 가장 큰 위험인자" },
+  { from: "hypertension", to: "subarachnoid-hemorrhage", type: "comorbidity", note: "고혈압은 뇌동맥류 파열 위험을 높임" },
+  { from: "hypertension", to: "cerebral-infarction", type: "comorbidity", note: "고혈압은 뇌경색의 주요 위험인자" },
+  { from: "diabetes", to: "cerebral-infarction", type: "comorbidity", note: "당뇨는 뇌경색 위험을 높임" },
+  { from: "dyslipidemia", to: "cerebral-infarction", type: "comorbidity", note: "이상지질혈증은 동맥경화로 뇌경색 위험 증가" },
+  { from: "cerebral-infarction", to: "stroke-sequelae", type: "progression", note: "뇌경색 이후 후유증으로 진행" },
+  { from: "intracerebral-hemorrhage", to: "stroke-sequelae", type: "progression", note: "뇌내출혈 이후 후유증으로 진행" },
+  { from: "cerebral-infarction", to: "vascular-dementia", type: "progression", note: "반복된 뇌경색이 혈관성 치매로 이어질 수 있음" },
+  { from: "stroke", to: "vascular-dementia", type: "comorbidity", note: "뇌졸중은 혈관성 치매의 주요 원인" },
+  { from: "alzheimer", to: "vascular-dementia", type: "comorbidity", note: "알츠하이머와 혈관성 치매가 함께 오는 혼합형 치매" },
+  { from: "parkinson", to: "essential-tremor", type: "comorbidity", note: "임상적으로 감별이 필요한 떨림 질환" },
+  { from: "parkinson", to: "secondary-parkinsonism", type: "comorbidity", note: "증상이 비슷해 감별이 필요한 파킨슨증" },
+  { from: "nph", to: "alzheimer", type: "comorbidity", note: "수술로 호전 가능한 가역성 치매로 감별 대상" },
+
+  // ── 균형 보강 관계 ──
+  { from: "myocardial-infarction", to: "heart-failure", type: "progression", note: "심근경색 손상이 심부전으로 진행할 수 있음" },
+  { from: "hypertension", to: "heart-failure", type: "comorbidity", note: "고혈압은 심부전의 위험인자" },
+  { from: "dyslipidemia", to: "angina", type: "comorbidity", note: "이상지질혈증은 관상동맥질환 위험 증가" },
+  { from: "hepatitis", to: "liver-cirrhosis", type: "progression", note: "만성 간염이 간경변으로 진행" },
+  { from: "gastritis", to: "stomach-cancer", type: "progression", note: "만성 위축성 위염은 위암 위험을 높임" },
+  { from: "gallstone", to: "pancreatitis", type: "comorbidity", note: "담석이 췌장염을 유발할 수 있음(담석성 췌장염)" },
+  { from: "spinal-stenosis", to: "herniated-disc", type: "comorbidity", note: "함께 나타나거나 감별이 필요한 척추 질환" },
+  { from: "obesity", to: "diabetes", type: "comorbidity", note: "비만은 2형 당뇨의 주요 위험인자" },
+  { from: "obesity", to: "hypertension", type: "comorbidity", note: "비만은 고혈압 위험을 높임" },
 ];
 
 async function main() {

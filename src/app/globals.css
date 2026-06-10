@@ -98,6 +98,23 @@ body::before {
   to { transform: scaleX(1); }
 }
 
+/* 부위 글로우 — 은은한 호흡(숨쉬기) */
+@keyframes atlas-breathe {
+  0%, 100% { opacity: 0.82; transform: translate(-50%, -50%) scale(1); }
+  50% { opacity: 1; transform: translate(-50%, -50%) scale(1.035); }
+}
+
+/* 실루엣 본체 — 아주 느린 깊이 호흡 */
+@keyframes silhouette-breathe {
+  0%, 100% { opacity: 0.9; }
+  50% { opacity: 1; }
+}
+
+/* 내분비 연결선 — 점선 흐름 */
+@keyframes lead-flow {
+  to { stroke-dashoffset: -16; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; }
 }

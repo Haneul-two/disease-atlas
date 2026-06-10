@@ -4,18 +4,19 @@
 import type { AtlasEdge, EdgeType } from "./atlas-types";
 import { EDGE_PRIORITY } from "./atlas-types";
 
-/** 부위(layoutZone)별 배치 구역 — 캔버스 ~1000×1200 기준, 신체 위치를 따른다 */
+/** 부위(layoutZone)별 배치 구역 — 실루엣 위에 겹쳐 보이도록 신체 좌표를 따른다.
+ *  중앙 세로축(x≈470): 머리→가슴→복부→다리(관절). 내분비만 목·샘처럼 우측으로 오프셋. */
 type ZoneConfig = { cx: number; cy: number; cols: number; gapX: number; gapY: number };
 
 const ZONE_LAYOUT: Record<string, ZoneConfig> = {
-  head: { cx: 500, cy: 140, cols: 3, gapX: 150, gapY: 95 }, // 위 = 뇌·신경
-  chest: { cx: 500, cy: 470, cols: 3, gapX: 150, gapY: 95 }, // 가운데 = 가슴
-  abdomen: { cx: 500, cy: 800, cols: 3, gapX: 150, gapY: 95 }, // 아래 = 복부
-  limbs: { cx: 120, cy: 600, cols: 1, gapX: 150, gapY: 95 }, // 왼쪽 = 관절
-  endocrine: { cx: 890, cy: 600, cols: 1, gapX: 150, gapY: 95 }, // 오른쪽(별도) = 내분비
+  head: { cx: 470, cy: 215, cols: 4, gapX: 132, gapY: 86 }, // 머리~목덜미 = 뇌·신경
+  endocrine: { cx: 772, cy: 470, cols: 2, gapX: 120, gapY: 84 }, // 우측 오프셋(목·샘) = 내분비
+  chest: { cx: 470, cy: 540, cols: 3, gapX: 132, gapY: 86 }, // 가슴
+  abdomen: { cx: 470, cy: 790, cols: 3, gapX: 132, gapY: 86 }, // 복부
+  limbs: { cx: 470, cy: 1040, cols: 4, gapX: 132, gapY: 86 }, // 다리·척추 = 관절
 };
 
-const FALLBACK_ZONE: ZoneConfig = { cx: 500, cy: 1050, cols: 4, gapX: 150, gapY: 95 };
+const FALLBACK_ZONE: ZoneConfig = { cx: 470, cy: 1240, cols: 4, gapX: 132, gapY: 86 };
 
 /**
  * 한 부위(zone)에 속한 질병들을 그 구역 안에 격자로 배치한 좌표를 돌려준다.
@@ -46,7 +47,24 @@ export function zoneLabelPosition(zone: string, count: number): { x: number; y: 
   const rows = Math.ceil(count / cols);
   return {
     x: cfg.cx,
-    y: Math.round(cfg.cy - ((rows - 1) / 2) * cfg.gapY - 70),
+    y: Math.round(cfg.cy - ((rows - 1) / 2) * cfg.gapY - 62),
+  };
+}
+
+/** 부위 클러스터의 중심 좌표 (실루엣 글로우 배치용) */
+export function zoneCenter(zone: string): { x: number; y: number } {
+  const cfg = ZONE_LAYOUT[zone] ?? FALLBACK_ZONE;
+  return { x: cfg.cx, y: cfg.cy };
+}
+
+/** 부위 클러스터를 감싸는 타원 반경 (부위색 글로우 크기 계산용) */
+export function zoneExtent(zone: string, count: number): { rx: number; ry: number } {
+  const cfg = ZONE_LAYOUT[zone] ?? FALLBACK_ZONE;
+  const cols = Math.min(cfg.cols, count) || 1;
+  const rows = Math.ceil(count / cols);
+  return {
+    rx: Math.round(((cols - 1) * cfg.gapX) / 2 + cfg.gapX * 0.85),
+    ry: Math.round(((rows - 1) * cfg.gapY) / 2 + cfg.gapY * 1.0),
   };
 }
 
