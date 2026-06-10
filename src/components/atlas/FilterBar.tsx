@@ -14,7 +14,7 @@ type Props = {
 function KeyLabel({ children }: { children: React.ReactNode }) {
   return (
     <span
-      className="mr-1 text-[10px] font-medium uppercase tracking-[0.22em] text-[var(--muted)]"
+      className="mr-1 shrink-0 text-[10px] font-medium uppercase tracking-[0.22em] text-[var(--muted)]"
       style={{ fontFamily: "var(--f-plex-mono)" }}
     >
       {children}
@@ -30,9 +30,9 @@ export default function FilterBar({
   toggleEdge,
 }: Props) {
   return (
-    <div className="flex flex-wrap items-center gap-x-7 gap-y-3 border-b border-[var(--line)] bg-[var(--ink-800)]/70 px-5 py-2.5 backdrop-blur-md">
-      {/* 부위 표본 스와치 */}
-      <div className="flex flex-wrap items-center gap-1.5">
+    <div className="flex flex-nowrap items-center gap-x-7 gap-y-3 overflow-x-auto border-b border-[var(--line)] bg-[var(--ink-800)]/70 px-5 py-2.5 backdrop-blur-md [scrollbar-width:none] sm:flex-wrap sm:overflow-x-visible">
+      {/* 부위 표본 스와치 — 모바일에선 한 줄 가로 스크롤 */}
+      <div className="flex flex-nowrap items-center gap-1.5 sm:flex-wrap">
         <KeyLabel>Region</KeyLabel>
         {bodyParts.map((bp) => {
           const on = visibleZones.has(bp.layoutZone);
@@ -40,7 +40,7 @@ export default function FilterBar({
             <button
               key={bp.slug}
               onClick={() => toggleZone(bp.layoutZone)}
-              className="group flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-[12.5px] transition-all duration-150"
+              className="group flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-md border px-2.5 py-1 text-[12.5px] transition-all duration-150"
               style={{
                 fontFamily: "var(--f-plex-kr)",
                 borderColor: on ? `${bp.color}66` : "var(--line)",
@@ -65,7 +65,7 @@ export default function FilterBar({
       <span className="hidden h-5 w-px bg-[var(--line)] sm:block" />
 
       {/* 연결선 키 */}
-      <div className="flex flex-wrap items-center gap-1.5">
+      <div className="flex flex-nowrap items-center gap-1.5 sm:flex-wrap">
         <KeyLabel>Links</KeyLabel>
         {EDGE_PRIORITY.map((type: EdgeType) => {
           const on = enabledEdges.has(type);
@@ -74,7 +74,7 @@ export default function FilterBar({
             <button
               key={type}
               onClick={() => toggleEdge(type)}
-              className="flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-[12px] transition-all duration-150"
+              className="flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-md border px-2.5 py-1 text-[12px] transition-all duration-150"
               style={{
                 fontFamily: "var(--f-plex-kr)",
                 borderColor: on ? `${c}55` : "transparent",
