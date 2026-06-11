@@ -310,7 +310,8 @@ function AtlasInner({ data }: { data: AtlasData }) {
             size={1}
             color="var(--rf-dots)"
           />
-          <Controls showInteractive={false} />
+          {/* 투어 중엔 좌하단을 TourCard가 차지 — 컨트롤 숨김(휠 줌은 유지) */}
+          {!activeTour && <Controls showInteractive={false} />}
           <Silhouette
             bodyParts={data.bodyParts}
             nodes={data.nodes}
