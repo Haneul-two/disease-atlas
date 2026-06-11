@@ -121,7 +121,9 @@ export default function Silhouette({ bodyParts, nodes, visibleZones, activeZone 
           position: "absolute",
           left: BODY_LEFT,
           top: BODY_TOP,
-          transform: "translate(-50%, 0)",
+          // 클러스터 확장(limbs cy 1250)에 맞춰 인체를 늘인다 — 발끝이 관절 클러스터를 덮도록
+          transform: "translate(-50%, 0) scale(1.25)",
+          transformOrigin: "top center",
           pointerEvents: "none",
           animation: "silhouette-breathe 14s ease-in-out infinite",
         }}

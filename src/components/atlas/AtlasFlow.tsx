@@ -1,7 +1,7 @@
 "use client";
 // Atlas 메인 캔버스 — React Flow로 질병 노드를 해부학적으로 배치하고,
 // 부위/엣지 필터·선택 하이라이트·상세 패널을 연결한다.
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ReactFlow,
   ReactFlowProvider,
@@ -24,6 +24,9 @@ import Starfield from "./Starfield";
 import FilterBar from "./FilterBar";
 import DetailPanel from "./DetailPanel";
 import SearchBox from "./SearchBox";
+import { TOURS } from "@/lib/tours";
+import TourMenu from "./TourMenu";
+import TourCard from "./TourCard";
 
 const nodeTypes = { disease: DiseaseNode };
 
@@ -74,6 +77,56 @@ function AtlasInner({ data }: { data: AtlasData }) {
       });
     },
     [data.nodes, setCenter]
+  );
+
+  // ── 투어 모드 ──
+  const [tour, setTour] = useState<{ slug: string; step: number } | null>(null);
+
+  const nodeBySlug = useMemo(() => {
+    const m = new Map<string, (typeof data.nodes)[number]>();
+    for (const n of data.nodes) m.set(n.slug, n);
+    return m;
+  }, [data.nodes]);
+
+  // 활성 투어 — 시드에 없는 slug 스텝은 건너뛰고 경고(데이터 어긋남 안전망)
+  const activeTour = useMemo(() => {
+    if (!tour) return null;
+    const def = TOURS.find((t) => t.slug === tour.slug);
+    if (!def) return null;
+    const steps = def.steps.filter((s) => {
+      if (nodeBySlug.has(s.diseaseSlug)) return true;
+      console.warn(`[tour] 시드에 없는 질병 slug: ${s.diseaseSlug}`);
+      return false;
+    });
+    return steps.length >= 2 ? { def, steps } : null;
+  }, [tour, nodeBySlug]);
+
+  // 스텝 인덱스는 항상 유효 범위로 보정 (slug 필터로 줄었을 수 있음)
+  const stepIndex = activeTour ? Math.min(tour!.step, activeTour.steps.length - 1) : 0;
+  const stepNode = activeTour
+    ? nodeBySlug.get(activeTour.steps[stepIndex].diseaseSlug) ?? null
+    : null;
+
+  // 스텝 변경 시 해당 질병으로 카메라 이동 + 선택 (검색과 같은 경로 재사용)
+  useEffect(() => {
+    if (stepNode) focusNode(stepNode.id);
+  }, [stepNode, focusNode]);
+
+  const startTour = useCallback((slug: string) => setTour({ slug, step: 0 }), []);
+  const exitTour = useCallback(() => {
+    setTour(null);
+    setSelectedId(null);
+  }, []);
+  const stepPrev = useCallback(
+    () => setTour((t) => (t ? { ...t, step: Math.max(0, t.step - 1) } : t)),
+    []
+  );
+  const stepNext = useCallback(
+    () =>
+      setTour((t) =>
+        t && activeTour ? { ...t, step: Math.min(activeTour.steps.length - 1, t.step + 1) } : t
+      ),
+    [activeTour]
   );
 
   // 초기 노드 (좌표·data) — 드래그 이동을 위해 useNodesState로 관리.
@@ -183,9 +236,14 @@ function AtlasInner({ data }: { data: AtlasData }) {
     [activeEdges, activeId]
   );
 
-  const onNodeClick: NodeMouseHandler = useCallback((_, node) => {
-    setSelectedId(node.id);
-  }, []);
+  // 투어 중에는 선택이 투어가 주도한다 — 클릭으로 카드와 어긋나지 않게 잠금
+  const onNodeClick: NodeMouseHandler = useCallback(
+    (_, node) => {
+      if (activeTour) return;
+      setSelectedId(node.id);
+    },
+    [activeTour]
+  );
 
   const onNodeMouseEnter: NodeMouseHandler = useCallback((_, node) => {
     setHoveredId(node.id);
@@ -238,7 +296,7 @@ function AtlasInner({ data }: { data: AtlasData }) {
           onNodeClick={onNodeClick}
           onNodeMouseEnter={onNodeMouseEnter}
           onNodeMouseLeave={onNodeMouseLeave}
-          onPaneClick={() => setSelectedId(null)}
+          onPaneClick={() => { if (!activeTour) setSelectedId(null); }}
           fitView
           fitViewOptions={{ padding: 0.2 }}
           minZoom={0.2}
@@ -252,7 +310,8 @@ function AtlasInner({ data }: { data: AtlasData }) {
             size={1}
             color="var(--rf-dots)"
           />
-          <Controls showInteractive={false} />
+          {/* 투어 중엔 좌하단을 TourCard가 차지 — 컨트롤 숨김(휠 줌은 유지) */}
+          {!activeTour && <Controls showInteractive={false} />}
           <Silhouette
             bodyParts={data.bodyParts}
             nodes={data.nodes}
@@ -260,13 +319,29 @@ function AtlasInner({ data }: { data: AtlasData }) {
             activeZone={activeZone}
           />
         </ReactFlow>
-        <DetailPanel
-          node={selectedNode}
-          data={data}
-          onClose={() => setSelectedId(null)}
-          onSelectRelated={focusNode}
-        />
-        <SearchBox nodes={data.nodes} onSelect={focusNode} />
+        {!activeTour && (
+          <DetailPanel
+            node={selectedNode}
+            data={data}
+            onClose={() => setSelectedId(null)}
+            onSelectRelated={focusNode}
+          />
+        )}
+        {!activeTour && <SearchBox nodes={data.nodes} onSelect={focusNode} />}
+        {!activeTour && <TourMenu onStart={startTour} />}
+        {activeTour && stepNode && (
+          <TourCard
+            tourTitle={activeTour.def.title}
+            stepIndex={stepIndex}
+            stepCount={activeTour.steps.length}
+            diseaseName={stepNode.name}
+            color={stepNode.color}
+            narrative={activeTour.steps[stepIndex].narrative}
+            onPrev={stepPrev}
+            onNext={stepNext}
+            onExit={exitTour}
+          />
+        )}
       </div>
     </div>
   );
