@@ -1,11 +1,27 @@
-import { PrismaClient } from "../src/generated/prisma/client";
-import { PrismaPg } from "@prisma/adapter-pg";
-import { bodyParts, categories, diseases, relations } from "./seed-data";
+// Disease Atlas — 시드 데이터 (교육용 · 비의학적)
+// seed.ts와 테스트가 함께 사용하므로 부수효과 없는 순수 데이터만 둔다.
 
-const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
-const prisma = new PrismaClient({ adapter });
+export type DiseaseSeed = {
+  slug: string;
+  name: string;
+  description: string;
+  treatment: string;
+  bodyPart: string;
+  category: string | null;
+  symptoms: string[];
+};
 
-const categories = [
+export type RelationSeed = { from: string; to: string; type: string; note?: string };
+
+export const bodyParts = [
+  { slug: "brain", name: "뇌·신경", color: "#7aa2ff", layoutZone: "head", order: 1 },
+  { slug: "chest", name: "가슴", color: "#e15b5b", layoutZone: "chest", order: 2 },
+  { slug: "abdomen", name: "복부", color: "#e0a94f", layoutZone: "abdomen", order: 3 },
+  { slug: "joint", name: "관절", color: "#56c596", layoutZone: "limbs", order: 4 },
+  { slug: "endocrine", name: "내분비", color: "#b07ae0", layoutZone: "endocrine", order: 5 },
+];
+
+export const categories = [
   { slug: "infection", name: "감염성" },
   { slug: "autoimmune", name: "자가면역" },
   { slug: "tumor", name: "종양" },
@@ -16,17 +32,7 @@ const categories = [
   { slug: "inflammatory", name: "염증성" },
 ];
 
-type DiseaseSeed = {
-  slug: string;
-  name: string;
-  description: string;
-  treatment: string;
-  bodyPart: string;
-  category: string | null;
-  symptoms: string[];
-};
-
-const diseases: DiseaseSeed[] = [
+export const diseases: DiseaseSeed[] = [
   // ── 뇌·신경 ──
   {
     slug: "migraine", name: "편두통", bodyPart: "brain", category: "neuropsych",
@@ -325,7 +331,7 @@ const diseases: DiseaseSeed[] = [
 ];
 
 // 합병/연관 질환 (수동 관계 엣지)
-const relations: { from: string; to: string; type: string; note?: string }[] = [
+export const relations: RelationSeed[] = [
   { from: "hypertension", to: "stroke", type: "comorbidity", note: "고혈압은 뇌졸중의 주요 위험인자" },
   { from: "hypertension", to: "myocardial-infarction", type: "comorbidity", note: "고혈압은 심근경색 위험을 높임" },
   { from: "diabetes", to: "stroke", type: "comorbidity", note: "당뇨는 혈관 합병증으로 뇌졸중 위험 증가" },
@@ -361,81 +367,3 @@ const relations: { from: string; to: string; type: string; note?: string }[] = [
   { from: "obesity", to: "diabetes", type: "comorbidity", note: "비만은 2형 당뇨의 주요 위험인자" },
   { from: "obesity", to: "hypertension", type: "comorbidity", note: "비만은 고혈압 위험을 높임" },
 ];
-
-async function main() {
-  const bpMap: Record<string, string> = {};
-  for (const bp of bodyParts) {
-    const r = await prisma.bodyPart.upsert({
-      where: { slug: bp.slug },
-      update: { name: bp.name, color: bp.color, layoutZone: bp.layoutZone, order: bp.order },
-      create: bp,
-    });
-    bpMap[bp.slug] = r.id;
-  }
-
-  const catMap: Record<string, string> = {};
-  for (const c of categories) {
-    const r = await prisma.category.upsert({
-      where: { slug: c.slug },
-      update: { name: c.name },
-      create: c,
-    });
-    catMap[c.slug] = r.id;
-  }
-
-  const dMap: Record<string, string> = {};
-  for (const d of diseases) {
-    const data = {
-      name: d.name,
-      description: d.description,
-      treatment: d.treatment,
-      bodyPartId: bpMap[d.bodyPart],
-      categoryId: d.category ? catMap[d.category] : null,
-    };
-    const r = await prisma.disease.upsert({
-      where: { slug: d.slug },
-      update: data,
-      create: { slug: d.slug, ...data },
-    });
-    dMap[d.slug] = r.id;
-
-    for (const sName of d.symptoms) {
-      const s = await prisma.symptom.upsert({
-        where: { name: sName },
-        update: {},
-        create: { name: sName },
-      });
-      await prisma.diseaseSymptom.upsert({
-        where: { diseaseId_symptomId: { diseaseId: r.id, symptomId: s.id } },
-        update: {},
-        create: { diseaseId: r.id, symptomId: s.id },
-      });
-    }
-  }
-
-  for (const rel of relations) {
-    await prisma.diseaseRelation.upsert({
-      where: {
-        fromId_toId_type: { fromId: dMap[rel.from], toId: dMap[rel.to], type: rel.type },
-      },
-      update: { note: rel.note ?? null },
-      create: { fromId: dMap[rel.from], toId: dMap[rel.to], type: rel.type, note: rel.note ?? null },
-    });
-  }
-
-  const counts = {
-    bodyParts: await prisma.bodyPart.count(),
-    categories: await prisma.category.count(),
-    symptoms: await prisma.symptom.count(),
-    diseases: await prisma.disease.count(),
-    relations: await prisma.diseaseRelation.count(),
-  };
-  console.log("✅ Seed 완료:", counts);
-}
-
-main()
-  .catch((e) => {
-    console.error(e);
-    process.exit(1);
-  })
-  .finally(() => prisma.$disconnect());
