@@ -14,6 +14,8 @@ export default function TourMenu({ onStart }: Props) {
     <div className="absolute left-3 top-3 z-10">
       <button
         onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        aria-haspopup="menu"
         className="flex items-center gap-2 rounded-full border border-[var(--line)] bg-[var(--ink-800)]/85 px-4 py-1.5 text-[12.5px] text-[var(--muted)] shadow-lg backdrop-blur-md transition-colors hover:border-[var(--line-strong)] hover:text-[var(--paper-dim)]"
         style={{ fontFamily: "var(--f-plex-kr)" }}
       >

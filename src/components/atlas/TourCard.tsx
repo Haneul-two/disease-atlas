@@ -43,7 +43,6 @@ export default function TourCard({
 
   return (
     <aside
-      key={stepIndex}
       className="absolute bottom-0 left-0 z-20 w-full border-t border-[var(--line)] bg-[var(--ink-800)]/95 backdrop-blur-md sm:bottom-4 sm:left-4 sm:w-[380px] sm:rounded-xl sm:border sm:border-[var(--line-strong)] sm:shadow-[0_18px_50px_rgba(0,0,0,0.55)]"
       style={{ animation: "panel-in 0.3s cubic-bezier(0.22, 1, 0.36, 1) both" }}
     >
@@ -71,7 +70,7 @@ export default function TourCard({
       </div>
 
       {/* 본문 — 질병명 + 해설 */}
-      <div className="px-4 pb-3 pt-3.5">
+      <div key={stepIndex} className="px-4 pb-3 pt-3.5" style={{ animation: "panel-in 0.3s cubic-bezier(0.22, 1, 0.36, 1) both" }}>
         <p className="mb-1.5 flex items-center gap-2">
           <span
             className="h-2 w-2 shrink-0 rounded-full"
@@ -103,7 +102,7 @@ export default function TourCard({
         </button>
         <button
           onClick={isLast ? onExit : onNext}
-          className="flex-1 rounded-md border border-[var(--line-strong)] bg-[var(--ink-700)] px-3 py-1.5 text-[12.5px] font-medium text-[var(--paper)] transition-colors hover:bg-[var(--ink-850)]"
+          className="flex-1 rounded-md border border-[var(--line-strong)] bg-[var(--ink-750)] px-3 py-1.5 text-[12.5px] font-medium text-[var(--paper)] transition-colors hover:bg-[var(--ink-700)]"
         >
           {isLast ? "투어 마치기" : "다음 →"}
         </button>
