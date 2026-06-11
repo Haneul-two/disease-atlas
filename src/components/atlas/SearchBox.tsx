@@ -3,19 +3,12 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Fuse from "fuse.js";
 import type { AtlasNode } from "@/lib/atlas-types";
+import { isTypingTarget } from "@/lib/keyboard";
 
 type Props = {
   nodes: AtlasNode[];
   onSelect: (nodeId: string) => void;
 };
-
-/** 입력 포커스 중이면 `/` 단축키를 가로채지 않는다 */
-function isTypingTarget(el: EventTarget | null): boolean {
-  const t = el as HTMLElement | null;
-  if (!t) return false;
-  const tag = t.tagName;
-  return tag === "INPUT" || tag === "TEXTAREA" || t.isContentEditable;
-}
 
 export default function SearchBox({ nodes, onSelect }: Props) {
   const [open, setOpen] = useState(false);
