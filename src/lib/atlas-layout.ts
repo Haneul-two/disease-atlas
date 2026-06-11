@@ -9,11 +9,11 @@ import { EDGE_PRIORITY } from "./atlas-types";
 type ZoneConfig = { cx: number; cy: number; cols: number; gapX: number; gapY: number };
 
 const ZONE_LAYOUT: Record<string, ZoneConfig> = {
-  head: { cx: 470, cy: 215, cols: 4, gapX: 132, gapY: 86 }, // 머리~목덜미 = 뇌·신경
-  endocrine: { cx: 800, cy: 478, cols: 2, gapX: 120, gapY: 84 }, // 우측 오프셋(목·샘) = 내분비
-  chest: { cx: 470, cy: 540, cols: 3, gapX: 132, gapY: 86 }, // 가슴
-  abdomen: { cx: 470, cy: 790, cols: 3, gapX: 132, gapY: 86 }, // 복부
-  limbs: { cx: 470, cy: 1040, cols: 4, gapX: 132, gapY: 86 }, // 다리·척추 = 관절
+  head: { cx: 470, cy: 215, cols: 4, gapX: 132, gapY: 86 }, // 머리~목덜미 = 뇌·신경 (불변)
+  endocrine: { cx: 950, cy: 560, cols: 2, gapX: 120, gapY: 84 }, // 우측 세로 띠(목·샘) = 내분비
+  chest: { cx: 470, cy: 560, cols: 4, gapX: 132, gapY: 86 }, // 가슴
+  abdomen: { cx: 470, cy: 905, cols: 4, gapX: 132, gapY: 86 }, // 복부
+  limbs: { cx: 470, cy: 1250, cols: 4, gapX: 132, gapY: 86 }, // 다리·척추 = 관절
 };
 
 const FALLBACK_ZONE: ZoneConfig = { cx: 470, cy: 1240, cols: 4, gapX: 132, gapY: 86 };
