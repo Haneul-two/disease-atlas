@@ -236,9 +236,14 @@ function AtlasInner({ data }: { data: AtlasData }) {
     [activeEdges, activeId]
   );
 
-  const onNodeClick: NodeMouseHandler = useCallback((_, node) => {
-    setSelectedId(node.id);
-  }, []);
+  // 투어 중에는 선택이 투어가 주도한다 — 클릭으로 카드와 어긋나지 않게 잠금
+  const onNodeClick: NodeMouseHandler = useCallback(
+    (_, node) => {
+      if (activeTour) return;
+      setSelectedId(node.id);
+    },
+    [activeTour]
+  );
 
   const onNodeMouseEnter: NodeMouseHandler = useCallback((_, node) => {
     setHoveredId(node.id);
@@ -291,7 +296,7 @@ function AtlasInner({ data }: { data: AtlasData }) {
           onNodeClick={onNodeClick}
           onNodeMouseEnter={onNodeMouseEnter}
           onNodeMouseLeave={onNodeMouseLeave}
-          onPaneClick={() => setSelectedId(null)}
+          onPaneClick={() => { if (!activeTour) setSelectedId(null); }}
           fitView
           fitViewOptions={{ padding: 0.2 }}
           minZoom={0.2}
@@ -321,7 +326,7 @@ function AtlasInner({ data }: { data: AtlasData }) {
             onSelectRelated={focusNode}
           />
         )}
-        <SearchBox nodes={data.nodes} onSelect={focusNode} />
+        {!activeTour && <SearchBox nodes={data.nodes} onSelect={focusNode} />}
         {!activeTour && <TourMenu onStart={startTour} />}
         {activeTour && stepNode && (
           <TourCard
