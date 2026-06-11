@@ -340,7 +340,7 @@ export const diseases: DiseaseSeed[] = [
     slug: "pulmonary-fibrosis", name: "폐섬유화증", bodyPart: "chest", category: "degenerative",
     description: "폐 조직이 섬유화되어 딱딱해지고 호흡 기능이 서서히 저하되는 진행성 질환.",
     treatment: "항섬유화제로 진행 억제, 산소요법, 중증은 폐이식 고려.",
-    symptoms: ["호흡곤란", "기침", "피로"],
+    symptoms: ["호흡곤란", "기침"],
   },
   {
     slug: "bronchiectasis", name: "기관지확장증", bodyPart: "chest", category: "inflammatory",
@@ -364,7 +364,7 @@ export const diseases: DiseaseSeed[] = [
     slug: "aortic-aneurysm", name: "대동맥류", bodyPart: "chest", category: "vascular",
     description: "대동맥 벽이 약해져 비정상적으로 부풀어 오르는 상태로 파열 시 생명을 위협하는 질환.",
     treatment: "작으면 정기 영상 감시, 크거나 빠르게 커지면 수술·스텐트 삽입.",
-    symptoms: ["무증상", "가슴통증"],
+    symptoms: ["가슴통증"],
   },
   {
     slug: "pulmonary-embolism", name: "폐색전증", bodyPart: "chest", category: "vascular",
@@ -396,7 +396,7 @@ export const diseases: DiseaseSeed[] = [
     slug: "chronic-kidney-disease", name: "만성콩팥병", bodyPart: "abdomen", category: "degenerative",
     description: "신장 기능이 서서히 저하되어 노폐물이 쌓이는 진행성 만성 질환.",
     treatment: "원인질환(고혈압·당뇨) 관리, 단백질 제한 식이, 말기는 투석·이식.",
-    symptoms: ["부종", "피로", "다뇨"],
+    symptoms: ["부종", "다뇨"],
   },
   {
     slug: "kidney-stone", name: "요로결석", bodyPart: "abdomen", category: "metabolic",
@@ -458,7 +458,7 @@ export const diseases: DiseaseSeed[] = [
     slug: "sarcopenia", name: "근감소증", bodyPart: "joint", category: "degenerative",
     description: "노화로 근육량과 근력이 줄어 낙상·신체 기능 저하로 이어지는 질환.",
     treatment: "저항성 운동과 단백질 섭취가 핵심, 동반 질환 관리.",
-    symptoms: ["근력저하", "보행장애", "피로"],
+    symptoms: ["근력저하", "보행장애"],
   },
   {
     slug: "polymyalgia-rheumatica", name: "류마티스다발근통", bodyPart: "joint", category: "inflammatory",
@@ -484,19 +484,19 @@ export const diseases: DiseaseSeed[] = [
     slug: "thyroid-nodule", name: "갑상선결절", bodyPart: "endocrine", category: null,
     description: "갑상선에 생기는 혹으로 대부분 양성이나 일부는 암 여부 확인이 필요한 상태.",
     treatment: "초음파·세침흡인검사로 추적 관찰, 악성이면 수술.",
-    symptoms: ["목멍울", "무증상"],
+    symptoms: ["목멍울"],
   },
   {
     slug: "hashimoto-thyroiditis", name: "하시모토갑상선염", bodyPart: "endocrine", category: "autoimmune",
     description: "자가면역 반응으로 갑상선이 서서히 파괴되어 기능저하로 이어지는 만성 갑상선염.",
     treatment: "기능저하 발생 시 갑상선호르몬 보충, 정기 혈액검사.",
-    symptoms: ["피로", "체중증가", "목멍울"],
+    symptoms: ["체중증가", "목멍울", "추위민감"],
   },
   {
     slug: "cushing-syndrome", name: "쿠싱증후군", bodyPart: "endocrine", category: "metabolic",
     description: "코르티솔이 과다하여 복부비만·고혈압·피부 변화 등이 나타나는 내분비 질환.",
     treatment: "원인에 따라 수술·방사선·약물로 코르티솔을 낮춤.",
-    symptoms: ["체중증가", "부종", "피로"],
+    symptoms: ["체중증가", "부종"],
   },
   {
     slug: "adrenal-insufficiency", name: "부신기능저하증", bodyPart: "endocrine", category: "metabolic",
@@ -514,13 +514,13 @@ export const diseases: DiseaseSeed[] = [
     slug: "hyperparathyroidism", name: "부갑상선기능항진증", bodyPart: "endocrine", category: "metabolic",
     description: "부갑상선호르몬 과다로 혈중 칼슘이 높아져 뼈·신장·소화기 이상을 일으키는 질환.",
     treatment: "증상 있거나 기준 초과 시 수술, 경증은 추적 관찰.",
-    symptoms: ["골절", "피로", "변비"],
+    symptoms: ["골절", "변비"],
   },
   {
     slug: "metabolic-syndrome", name: "대사증후군", bodyPart: "endocrine", category: "metabolic",
     description: "복부비만·고혈압·고혈당·이상지질혈증이 함께 나타나 심혈관 위험을 높이는 상태.",
     treatment: "생활습관 교정(식이·운동)이 핵심, 각 구성 요소별 약물 치료.",
-    symptoms: ["체중증가", "무증상"],
+    symptoms: ["체중증가"],
   },
   {
     slug: "hypoglycemia", name: "저혈당증", bodyPart: "endocrine", category: "metabolic",
@@ -596,4 +596,5 @@ export const relations: RelationSeed[] = [
   { from: "hepatitis", to: "liver-cancer", type: "progression", note: "만성 B·C형 간염은 간암으로 진행 가능" },
   { from: "pancreatitis", to: "pancreatic-cancer", type: "comorbidity", note: "만성 췌장염은 췌장암 위험을 높임" },
   { from: "hashimoto-thyroiditis", to: "hypothyroidism", type: "progression", note: "하시모토갑상선염은 기능저하증의 흔한 원인" },
+  { from: "metabolic-syndrome", to: "hypertension", type: "comorbidity", note: "고혈압은 대사증후군 구성 요소" },
 ];
