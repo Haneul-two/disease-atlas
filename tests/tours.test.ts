@@ -23,3 +23,10 @@ test("모든 스텝의 diseaseSlug가 시드에 존재한다", () => {
     for (const s of t.steps)
       assert.ok(diseaseSlugs.has(s.diseaseSlug), `${t.slug}: ${s.diseaseSlug}`);
 });
+
+test("한 투어 안에서 질병이 중복되지 않는다", () => {
+  for (const t of TOURS) {
+    const slugs = t.steps.map((s) => s.diseaseSlug);
+    assert.equal(new Set(slugs).size, slugs.length, t.slug);
+  }
+});

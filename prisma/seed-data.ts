@@ -597,4 +597,6 @@ export const relations: RelationSeed[] = [
   { from: "pancreatitis", to: "pancreatic-cancer", type: "comorbidity", note: "만성 췌장염은 췌장암 위험을 높임" },
   { from: "hashimoto-thyroiditis", to: "hypothyroidism", type: "progression", note: "하시모토갑상선염은 기능저하증의 흔한 원인" },
   { from: "metabolic-syndrome", to: "hypertension", type: "comorbidity", note: "고혈압은 대사증후군 구성 요소" },
+  { from: "dyslipidemia", to: "hypertension", type: "comorbidity", note: "함께 동반되는 대표적 혈관 위험인자" },
+  { from: "hypertension", to: "angina", type: "comorbidity", note: "고혈압은 관상동맥질환(협심증) 위험인자" },
 ];
