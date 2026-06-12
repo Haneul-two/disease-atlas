@@ -87,6 +87,7 @@ export async function saveDisease(
 
   const id = str(fd, "id");
   const name = str(fd, "name");
+  const medicalTerm = str(fd, "medicalTerm") || null;
   const description = str(fd, "description");
   const treatment = str(fd, "treatment");
   const bodyPartId = str(fd, "bodyPartId");
@@ -102,7 +103,7 @@ export async function saveDisease(
   try {
     await prisma.$transaction(async (tx) => {
       const slug = slugInput || genSlug("disease", name);
-      const base = { name, slug, description, treatment, bodyPartId, categoryId };
+      const base = { name, slug, medicalTerm, description, treatment, bodyPartId, categoryId };
 
       const disease = id
         ? await tx.disease.update({ where: { id }, data: base })

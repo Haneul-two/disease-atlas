@@ -5,6 +5,7 @@ export type AdminDisease = {
   id: string;
   name: string;
   slug: string;
+  medicalTerm: string | null;
   description: string;
   treatment: string;
   bodyPartId: string;
@@ -76,6 +77,7 @@ export async function getAdminData(): Promise<AdminData> {
       id: d.id,
       name: d.name,
       slug: d.slug,
+      medicalTerm: d.medicalTerm,
       description: d.description,
       treatment: d.treatment,
       bodyPartId: d.bodyPartId,

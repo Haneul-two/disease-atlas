@@ -17,6 +17,7 @@ export type AtlasNode = {
   id: string;
   slug: string;
   name: string;
+  medicalTerm: string | null;
   description: string;
   treatment: string;
   bodyPartSlug: string;

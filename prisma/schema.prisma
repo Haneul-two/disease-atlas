@@ -41,6 +41,7 @@ model Disease {
   id          String   @id @default(cuid())
   name        String   @unique
   slug        String   @unique
+  medicalTerm String? // 의학용어 (라틴/영문 정식 명칭)
   description String // 용어 설명
   treatment   String // 치료법
 

@@ -37,6 +37,7 @@ export async function getAtlasGraph(): Promise<AtlasData> {
     id: d.id,
     slug: d.slug,
     name: d.name,
+    medicalTerm: d.medicalTerm,
     description: d.description,
     treatment: d.treatment,
     bodyPartSlug: d.bodyPart.slug,

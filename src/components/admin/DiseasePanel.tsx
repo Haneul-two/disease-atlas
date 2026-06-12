@@ -114,6 +114,15 @@ function DiseaseForm({
         <input name="name" defaultValue={editing?.name ?? ""} className={fieldCls} required />
       </Field>
 
+      <Field label="의학용어 (선택)">
+        <input
+          name="medicalTerm"
+          defaultValue={editing?.medicalTerm ?? ""}
+          className={fieldCls}
+          placeholder="Hashimoto thyroiditis"
+        />
+      </Field>
+
       <div className="grid grid-cols-2 gap-3">
         <Field label="부위">
           <select name="bodyPartId" defaultValue={editing?.bodyPartId ?? ""} className={fieldCls} required>

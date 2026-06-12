@@ -66,6 +66,14 @@ export default function DetailPanel({ node, data, onClose, onSelectRelated }: Pr
         >
           {node.name}
         </h2>
+        {node.medicalTerm && (
+          <p
+            className="mt-1.5 text-[12px] italic leading-snug text-[var(--muted)]"
+            style={{ fontFamily: "var(--f-plex-mono)" }}
+          >
+            {node.medicalTerm}
+          </p>
+        )}
         <span className="mt-3 block h-px w-full bg-[var(--line)]" />
       </div>
 
@@ -104,21 +112,25 @@ export default function DetailPanel({ node, data, onClose, onSelectRelated }: Pr
                 <li key={r.id}>
                   <button
                     onClick={() => onSelectRelated(r.id)}
-                    className="group flex w-full items-center gap-2.5 rounded-md px-2 py-2 text-left transition-colors hover:bg-[var(--ink-700)]"
+                    className="group flex w-full flex-col gap-1 rounded-md px-2 py-2 text-left transition-colors hover:bg-[var(--ink-700)]"
                   >
-                    <span
-                      className="h-2 w-2 shrink-0 rounded-full"
-                      style={{ background: r.color, boxShadow: `0 0 6px ${r.color}aa` }}
-                    />
-                    <span className="text-[13.5px] font-medium text-[var(--paper)] group-hover:text-[var(--bone-bright)]">
-                      {r.name}
+                    <span className="flex w-full items-center gap-2.5">
+                      <span
+                        className="h-2 w-2 shrink-0 rounded-full"
+                        style={{ background: r.color, boxShadow: `0 0 6px ${r.color}aa` }}
+                      />
+                      <span className="text-[13.5px] font-medium text-[var(--paper)] group-hover:text-[var(--bone-bright)]">
+                        {r.name}
+                      </span>
+                      <span className="ml-auto text-[var(--muted)] opacity-0 transition-opacity group-hover:opacity-100">
+                        →
+                      </span>
                     </span>
                     {note && (
-                      <span className="truncate text-[11px] text-[var(--muted)]">— {note}</span>
+                      <span className="pl-[18px] text-[11px] leading-relaxed text-[var(--muted)]">
+                        — {note}
+                      </span>
                     )}
-                    <span className="ml-auto text-[var(--muted)] opacity-0 transition-opacity group-hover:opacity-100">
-                      →
-                    </span>
                   </button>
                 </li>
               ))}
