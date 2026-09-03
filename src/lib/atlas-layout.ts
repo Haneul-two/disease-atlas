@@ -1,8 +1,8 @@
 // Disease Atlas — 해부학적 노드 배치 + 엣지 파생 (순수 함수)
 // 결정적(deterministic)이므로 서버에서 한 번 계산해 클라이언트로 넘긴다.
 
-import type { AtlasEdge, EdgeType } from "./atlas-types";
-import { EDGE_PRIORITY } from "./atlas-types";
+import type { AtlasEdge, EdgeType, RelationType } from "./atlas-types";
+import { DIRECTED_RELATIONS, EDGE_PRIORITY, RELATION_PRIORITY } from "./atlas-types";
 
 /** 부위(layoutZone)별 배치 구역 — 실루엣 위에 겹쳐 보이도록 신체 좌표를 따른다.
  *  중앙 세로축(x≈470): 머리→가슴→복부→다리(관절). 내분비만 목·샘처럼 우측으로 오프셋. */
@@ -91,7 +91,20 @@ type DiseaseForEdges = {
   symptoms: string[];
 };
 
-type ManualRelation = { fromId: string; toId: string; note?: string | null };
+type ManualRelation = {
+  fromId: string;
+  toId: string;
+  type: RelationType;
+  note?: string | null;
+};
+
+/** 같은 쌍에 관계가 여러 개면 우선순위가 높은 쪽을 대표로 남긴다 */
+type RelationInfo = { type: RelationType; fromId: string; toId: string };
+
+function higherRelation(a: RelationInfo | undefined, b: RelationInfo): RelationInfo {
+  if (!a) return b;
+  return RELATION_PRIORITY.indexOf(a.type) <= RELATION_PRIORITY.indexOf(b.type) ? a : b;
+}
 
 /** undirected 쌍 키 (정렬해 중복 방지) */
 function pairKey(a: string, b: string): string {
@@ -121,6 +134,7 @@ export function deriveEdges(
       types: Set<EdgeType>;
       note?: string | null;
       sharedSymptoms?: string[];
+      relation?: RelationInfo;
     }
   >();
 
@@ -128,7 +142,7 @@ export function deriveEdges(
     a: string,
     b: string,
     type: EdgeType,
-    extra?: { note?: string | null; sharedSymptoms?: string[] }
+    extra?: { note?: string | null; sharedSymptoms?: string[]; relation?: RelationInfo }
   ) => {
     if (a === b) return;
     const key = pairKey(a, b);
@@ -137,6 +151,7 @@ export function deriveEdges(
       existing.types.add(type);
       if (extra?.note) existing.note = extra.note;
       if (extra?.sharedSymptoms) existing.sharedSymptoms = extra.sharedSymptoms;
+      if (extra?.relation) existing.relation = higherRelation(existing.relation, extra.relation);
     } else {
       merged.set(key, {
         source: a < b ? a : b,
@@ -144,12 +159,17 @@ export function deriveEdges(
         types: new Set([type]),
         note: extra?.note,
         sharedSymptoms: extra?.sharedSymptoms,
+        relation: extra?.relation,
       });
     }
   };
 
   // 수동 관계
-  for (const r of relations) add(r.fromId, r.toId, "relation", { note: r.note });
+  for (const r of relations)
+    add(r.fromId, r.toId, "relation", {
+      note: r.note,
+      relation: { type: r.type, fromId: r.fromId, toId: r.toId },
+    });
 
   // 쌍 비교 기반 (부위 / 계통 / 공통 증상)
   for (let i = 0; i < diseases.length; i++) {
@@ -167,6 +187,7 @@ export function deriveEdges(
   for (const [key, m] of merged) {
     const types = [...m.types];
     const primary = types.reduce((acc, t) => higherPriority(acc, t));
+    const directed = m.relation ? DIRECTED_RELATIONS.includes(m.relation.type) : false;
     edges.push({
       id: `e-${key}`,
       source: m.source,
@@ -175,6 +196,9 @@ export function deriveEdges(
       primary,
       note: m.note ?? null,
       sharedSymptoms: m.sharedSymptoms,
+      relationType: m.relation?.type,
+      relationFrom: directed ? m.relation!.fromId : undefined,
+      relationTo: directed ? m.relation!.toId : undefined,
     });
   }
   return edges;
