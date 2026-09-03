@@ -1,6 +1,8 @@
 // Disease Atlas — 시드 데이터 (교육용 · 비의학적)
 // seed.ts와 테스트가 함께 사용하므로 부수효과 없는 순수 데이터만 둔다.
 
+import type { RelationType } from "../src/lib/atlas-types";
+
 export type DiseaseSeed = {
   slug: string;
   name: string;
@@ -11,7 +13,7 @@ export type DiseaseSeed = {
   symptoms: string[];
 };
 
-export type RelationSeed = { from: string; to: string; type: string; note?: string };
+export type RelationSeed = { from: string; to: string; type: RelationType; note: string };
 
 export const bodyParts = [
   { slug: "brain", name: "뇌·신경", color: "#7aa2ff", layoutZone: "head", order: 1 },

@@ -41,6 +41,12 @@ export type AtlasEdge = {
   note?: string | null;
   /** 공통 증상 엣지일 때 공유하는 증상 이름들 */
   sharedSymptoms?: string[];
+  /** 수동 관계일 때의 대표 관계 타입 (v1.2) */
+  relationType?: RelationType;
+  /** 방향 있는 관계의 시작 노드 id — 무방향이면 undefined */
+  relationFrom?: string;
+  /** 방향 있는 관계의 끝 노드 id — 무방향이면 undefined */
+  relationTo?: string;
 };
 
 export type AtlasData = {
@@ -67,3 +73,27 @@ export const EDGE_LABELS: Record<EdgeType, string> = {
 
 /** 색 우선순위 (낮을수록 우선) */
 export const EDGE_PRIORITY: EdgeType[] = ["relation", "symptom", "category", "bodypart"];
+
+// ── 수동 관계(DiseaseRelation.type)의 4종 — v1.2 ──
+
+export const RELATION_TYPES = ["progression", "complication", "risk", "comorbidity"] as const;
+export type RelationType = (typeof RELATION_TYPES)[number];
+
+/** 상세 패널 그룹 소제목 */
+export const RELATION_LABELS: Record<RelationType, string> = {
+  progression: "진행",
+  complication: "합병증",
+  risk: "위험인자",
+  comorbidity: "동반",
+};
+
+/** 방향(from → to)이 의미를 갖는 관계 — 화살표를 그린다 */
+export const DIRECTED_RELATIONS: RelationType[] = ["progression", "complication", "risk"];
+
+/** 같은 쌍에 여러 관계가 있을 때 대표를 고르는 우선순위 (앞이 우선) */
+export const RELATION_PRIORITY: RelationType[] = [
+  "progression",
+  "complication",
+  "risk",
+  "comorbidity",
+];
