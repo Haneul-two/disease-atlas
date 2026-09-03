@@ -37,3 +37,23 @@ export function groupRelated(node: AtlasNode, data: AtlasData): RelatedGroup[] {
     items: byType.get(t)!,
   }));
 }
+
+/**
+ * 관련 질환 항목의 스크린리더 라벨 — 방향을 두 질병 이름으로 못박아 인과가 뒤집히지 않게 한다.
+ * 각 질병 이름은 문자열에 정확히 한 번만, 원인 → 결과 순서로 등장한다(접두어로 중복하지 않는다) —
+ * 그래야 "원인 이름이 결과 이름보다 앞에 온다"는 검증이 실제로 의미를 가진다.
+ * 은/는·이/가처럼 받침에 따라 갈리는 조사는 피하고, 이름이 무엇이든 안전하게 붙는 "에서"/"방향"만 쓴다.
+ */
+export function relatedItemLabel(
+  currentName: string,
+  item: RelatedItem,
+  typeLabel: string
+): string {
+  const { node, note, direction } = item;
+  if (direction === null) {
+    return `${typeLabel}, ${node.name}${note ? `. ${note}` : ""}`;
+  }
+  const originName = direction === "out" ? currentName : node.name;
+  const destName = direction === "out" ? node.name : currentName;
+  return `${typeLabel}, ${originName}에서 ${destName} 방향${note ? `. ${note}` : ""}`;
+}

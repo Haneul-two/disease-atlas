@@ -2,7 +2,7 @@
 // 우측 인스펙션 카드 — 표본 카탈로그 항목처럼 질병을 펼쳐 보인다.
 import type { AtlasData, AtlasNode } from "@/lib/atlas-types";
 import { RELATION_LABELS } from "@/lib/atlas-types";
-import { groupRelated } from "@/lib/related";
+import { groupRelated, relatedItemLabel } from "@/lib/related";
 import Disclaimer from "./Disclaimer";
 
 type Props = {
@@ -116,6 +116,7 @@ export default function DetailPanel({ node, data, onClose, onSelectRelated }: Pr
                       <li key={`${g.type}-${r.id}`}>
                         <button
                           onClick={() => onSelectRelated(r.id)}
+                          aria-label={relatedItemLabel(node.name, { node: r, note, direction }, RELATION_LABELS[g.type])}
                           className="group flex w-full flex-col gap-1 rounded-md px-2 py-2 text-left transition-colors hover:bg-[var(--ink-700)]"
                         >
                           <span className="flex w-full items-center gap-2.5">
@@ -124,10 +125,7 @@ export default function DetailPanel({ node, data, onClose, onSelectRelated }: Pr
                               style={{ background: r.color, boxShadow: `0 0 6px ${r.color}aa` }}
                             />
                             {direction && (
-                              <span
-                                aria-label={direction === "out" ? "이 질병이 원인" : "이 질병이 결과"}
-                                className="shrink-0 text-[11px] text-[var(--muted)]"
-                              >
+                              <span aria-hidden="true" className="shrink-0 text-[11px] text-[var(--muted)]">
                                 {direction === "out" ? "→" : "←"}
                               </span>
                             )}
