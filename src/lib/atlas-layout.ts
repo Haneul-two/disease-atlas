@@ -101,9 +101,15 @@ type ManualRelation = {
 /** 같은 쌍에 관계가 여러 개면 우선순위가 높은 쪽을 대표로 남긴다 */
 type RelationInfo = { type: RelationType; fromId: string; toId: string };
 
+/** 우선순위 목록에 없는(알 수 없는) 타입은 최하위로 취급한다 — indexOf의 -1이 최상위로 오작동하는 걸 막는다 */
+function rank(type: RelationType): number {
+  const i = RELATION_PRIORITY.indexOf(type);
+  return i === -1 ? Number.POSITIVE_INFINITY : i;
+}
+
 function higherRelation(a: RelationInfo | undefined, b: RelationInfo): RelationInfo {
   if (!a) return b;
-  return RELATION_PRIORITY.indexOf(a.type) <= RELATION_PRIORITY.indexOf(b.type) ? a : b;
+  return rank(a.type) <= rank(b.type) ? a : b;
 }
 
 /** undirected 쌍 키 (정렬해 중복 방지) */

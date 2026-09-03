@@ -2,6 +2,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { deriveEdges } from "../src/lib/atlas-layout";
+import { RELATION_TYPES, toRelationType, type RelationType } from "../src/lib/atlas-types";
 
 // 부위·계통·증상을 전부 다르게 두어 파생 엣지가 섞이지 않게 한다
 const diseases = [
@@ -37,4 +38,31 @@ test("같은 쌍에 여러 관계가 있으면 progression이 대표가 된다",
   ]);
   const e = edges.find((x) => x.types.includes("relation"))!;
   assert.equal(e.relationType, "progression");
+});
+
+test("toRelationType은 유효한 4종은 그대로, 알 수 없는 값·빈 문자열은 comorbidity로 강등한다", () => {
+  for (const t of RELATION_TYPES) {
+    assert.equal(toRelationType(t), t);
+  }
+  assert.equal(toRelationType("알수없는값"), "comorbidity");
+  assert.equal(toRelationType(""), "comorbidity");
+});
+
+test("알 수 없는 타입이 섞여도 유효한 progression이 대표가 된다 (삽입 순서 무관)", () => {
+  // DB·폼 검증을 우회해 실수로 들어온 값을 가정 — indexOf가 -1을 최상위로 오판하지 않는지 확인
+  const unknownType = "알수없음" as unknown as RelationType;
+
+  const invalidFirst = deriveEdges(diseases, [
+    { fromId: "a", toId: "b", type: unknownType, note: "알 수 없는 타입" },
+    { fromId: "a", toId: "b", type: "progression", note: "진행" },
+  ]);
+  const e1 = invalidFirst.find((x) => x.types.includes("relation"))!;
+  assert.equal(e1.relationType, "progression");
+
+  const invalidSecond = deriveEdges(diseases, [
+    { fromId: "a", toId: "b", type: "progression", note: "진행" },
+    { fromId: "a", toId: "b", type: unknownType, note: "알 수 없는 타입" },
+  ]);
+  const e2 = invalidSecond.find((x) => x.types.includes("relation"))!;
+  assert.equal(e2.relationType, "progression");
 });

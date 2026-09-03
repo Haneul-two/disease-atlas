@@ -97,3 +97,10 @@ export const RELATION_PRIORITY: RelationType[] = [
   "risk",
   "comorbidity",
 ];
+
+/** DB·폼에서 온 문자열을 관계 타입으로 좁힌다 — 알 수 없는 값은 기본값으로 강등 */
+export function toRelationType(value: string): RelationType {
+  return (RELATION_TYPES as readonly string[]).includes(value)
+    ? (value as RelationType)
+    : "comorbidity";
+}
