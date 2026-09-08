@@ -611,7 +611,6 @@ export const relations: RelationSeed[] = [
   { from: "stroke-sequelae", to: "pneumonia", type: "complication", note: "삼킴장애로 음식물이 기도로 넘어가 흡인성 폐렴이 반복될 수 있음" },
   { from: "parkinson", to: "hip-fracture", type: "complication", note: "몸이 굳고 균형을 잃어 자주 넘어지므로 고관절골절 위험이 큼" },
   { from: "multiple-sclerosis", to: "osteoporosis", type: "complication", note: "거동이 줄고 스테로이드를 반복해 쓰면서 뼈가 약해짐" },
-  { from: "multiple-sclerosis", to: "hashimoto-thyroiditis", type: "comorbidity", note: "자가면역 질환은 한 사람에게 겹쳐 오는 경향이 있어 갑상선 자가면역도 함께 확인함" },
   { from: "spinal-muscular-atrophy", to: "pneumonia", type: "complication", note: "호흡근이 약해 가래를 뱉지 못하면 폐렴이 반복되고 위중해짐" },
   { from: "spinal-muscular-atrophy", to: "osteoporosis", type: "complication", note: "체중을 싣고 서는 시간이 없어 뼈가 약해지고 쉽게 부러짐" },
 
