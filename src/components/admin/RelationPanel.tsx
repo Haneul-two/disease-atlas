@@ -3,15 +3,11 @@
 import { useActionState, useState } from "react";
 import type { AdminDisease, AdminRelation } from "@/lib/admin-data";
 import { deleteRelation, saveRelation } from "@/app/admin/actions";
+import { RELATION_LABELS, RELATION_TYPES } from "@/lib/atlas-types";
 import { fieldCls, Field, Notice, SubmitButton, DeleteButton } from "./ui";
 
-const TYPES = [
-  { value: "comorbidity", label: "합병·연관" },
-  { value: "progression", label: "진행" },
-];
-
 function typeLabel(v: string) {
-  return TYPES.find((t) => t.value === v)?.label ?? v;
+  return RELATION_LABELS[v as keyof typeof RELATION_LABELS] ?? v;
 }
 
 export default function RelationPanel({
@@ -145,9 +141,9 @@ function RelationForm({
 
       <Field label="유형">
         <select name="type" defaultValue={editing?.type ?? "comorbidity"} className={fieldCls}>
-          {TYPES.map((t) => (
-            <option key={t.value} value={t.value}>
-              {t.label}
+          {RELATION_TYPES.map((t) => (
+            <option key={t} value={t}>
+              {RELATION_LABELS[t]}
             </option>
           ))}
         </select>

@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { ADMIN_COOKIE, checkPassword, isAuthed, sessionToken } from "@/lib/auth";
+import { toRelationType } from "@/lib/atlas-types";
 
 export type ActionResult = { ok: boolean; error?: string; message?: string };
 
@@ -224,7 +225,7 @@ export async function saveRelation(
   const id = str(fd, "id");
   const fromId = str(fd, "fromId");
   const toId = str(fd, "toId");
-  const type = str(fd, "type") || "comorbidity";
+  const type = toRelationType(str(fd, "type"));
   const note = str(fd, "note") || null;
   if (!fromId || !toId) return { ok: false, error: "두 질병을 모두 선택하세요." };
   if (fromId === toId) return { ok: false, error: "서로 다른 질병을 선택하세요." };

@@ -1,6 +1,8 @@
 "use client";
 // 우측 인스펙션 카드 — 표본 카탈로그 항목처럼 질병을 펼쳐 보인다.
 import type { AtlasData, AtlasNode } from "@/lib/atlas-types";
+import { RELATION_LABELS } from "@/lib/atlas-types";
+import { groupRelated, relatedItemLabel } from "@/lib/related";
 import Disclaimer from "./Disclaimer";
 
 type Props = {
@@ -13,14 +15,7 @@ type Props = {
 export default function DetailPanel({ node, data, onClose, onSelectRelated }: Props) {
   if (!node) return null;
 
-  const related = data.edges
-    .filter((e) => e.types.includes("relation") && (e.source === node.id || e.target === node.id))
-    .map((e) => {
-      const otherId = e.source === node.id ? e.target : e.source;
-      const other = data.nodes.find((n) => n.id === otherId);
-      return other ? { node: other, note: e.note } : null;
-    })
-    .filter((x): x is { node: AtlasNode; note: string | null | undefined } => x !== null);
+  const groups = groupRelated(node, data);
 
   const c = node.color;
 
@@ -105,36 +100,51 @@ export default function DetailPanel({ node, data, onClose, onSelectRelated }: Pr
           </p>
         </Section>
 
-        {related.length > 0 && (
+        {groups.length > 0 && (
           <Section index="04" title="관련 질환 · Related">
-            <ul className="-mx-2 space-y-0.5">
-              {related.map(({ node: r, note }) => (
-                <li key={r.id}>
-                  <button
-                    onClick={() => onSelectRelated(r.id)}
-                    className="group flex w-full flex-col gap-1 rounded-md px-2 py-2 text-left transition-colors hover:bg-[var(--ink-700)]"
+            <div className="space-y-4">
+              {groups.map((g) => (
+                <div key={g.type}>
+                  <p
+                    className="mb-1 px-2 text-[10px] uppercase tracking-[0.16em] text-[var(--muted)]"
+                    style={{ fontFamily: "var(--f-plex-mono)" }}
                   >
-                    <span className="flex w-full items-center gap-2.5">
-                      <span
-                        className="h-2 w-2 shrink-0 rounded-full"
-                        style={{ background: r.color, boxShadow: `0 0 6px ${r.color}aa` }}
-                      />
-                      <span className="text-[13.5px] font-medium text-[var(--paper)] group-hover:text-[var(--bone-bright)]">
-                        {r.name}
-                      </span>
-                      <span className="ml-auto text-[var(--muted)] opacity-0 transition-opacity group-hover:opacity-100">
-                        →
-                      </span>
-                    </span>
-                    {note && (
-                      <span className="pl-[18px] text-[11px] leading-relaxed text-[var(--muted)]">
-                        — {note}
-                      </span>
-                    )}
-                  </button>
-                </li>
+                    {RELATION_LABELS[g.type]}
+                  </p>
+                  <ul className="-mx-2 space-y-0.5">
+                    {g.items.map(({ node: r, note, direction }) => (
+                      <li key={`${g.type}-${r.id}`}>
+                        <button
+                          onClick={() => onSelectRelated(r.id)}
+                          aria-label={relatedItemLabel(node.name, { node: r, note, direction }, RELATION_LABELS[g.type])}
+                          className="group flex w-full flex-col gap-1 rounded-md px-2 py-2 text-left transition-colors hover:bg-[var(--ink-700)]"
+                        >
+                          <span className="flex w-full items-center gap-2.5">
+                            <span
+                              className="h-2 w-2 shrink-0 rounded-full"
+                              style={{ background: r.color, boxShadow: `0 0 6px ${r.color}aa` }}
+                            />
+                            {direction && (
+                              <span aria-hidden="true" className="shrink-0 text-[11px] text-[var(--muted)]">
+                                {direction === "out" ? "→" : "←"}
+                              </span>
+                            )}
+                            <span className="text-[13.5px] font-medium text-[var(--paper)] group-hover:text-[var(--bone-bright)]">
+                              {r.name}
+                            </span>
+                          </span>
+                          {note && (
+                            <span className="pl-[18px] text-[11px] leading-relaxed text-[var(--muted)]">
+                              — {note}
+                            </span>
+                          )}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
               ))}
-            </ul>
+            </div>
           </Section>
         )}
       </div>

@@ -1,6 +1,7 @@
 // Disease Atlas — DB → Atlas 그래프 데이터 (서버 전용)
 import { prisma } from "./prisma";
 import { deriveEdges, zonePositions } from "./atlas-layout";
+import { toRelationType } from "./atlas-types";
 import type { AtlasData, AtlasNode } from "./atlas-types";
 
 /** 질병/부위/관계를 읽어 노드(해부학적 좌표 포함)와 엣지를 만든다. */
@@ -56,7 +57,12 @@ export async function getAtlasGraph(): Promise<AtlasData> {
       categoryName: n.categoryName,
       symptoms: n.symptoms,
     })),
-    relations.map((r) => ({ fromId: r.fromId, toId: r.toId, note: r.note }))
+    relations.map((r) => ({
+      fromId: r.fromId,
+      toId: r.toId,
+      type: toRelationType(r.type),
+      note: r.note,
+    }))
   );
 
   return {

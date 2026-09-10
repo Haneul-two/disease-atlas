@@ -9,6 +9,7 @@ import {
   BackgroundVariant,
   Controls,
   useReactFlow,
+  MarkerType,
   type Node,
   type Edge,
   type NodeMouseHandler,
@@ -17,7 +18,7 @@ import {
 import "@xyflow/react/dist/style.css";
 
 import type { AtlasData, EdgeType } from "@/lib/atlas-types";
-import { EDGE_COLORS } from "@/lib/atlas-types";
+import { edgeVisual } from "@/lib/edge-style";
 import DiseaseNode from "./DiseaseNode";
 import Silhouette from "./Silhouette";
 import Starfield from "./Starfield";
@@ -214,23 +215,17 @@ function AtlasInner({ data }: { data: AtlasData }) {
   const renderEdges: Edge[] = useMemo(
     () =>
       activeEdges.map((e) => {
-        const touchesActive =
-          !!activeId && (e.source === activeId || e.target === activeId);
-        const dimmed = !!activeId && !touchesActive;
-        const color = EDGE_COLORS[e.primary];
-        const restOpacity =
-          e.primary === "relation" ? 0.3 : e.primary === "symptom" ? 0.16 : 0.1;
+        const v = edgeVisual(e, activeId);
         return {
           id: e.id,
-          source: e.source,
-          target: e.target,
+          source: v.source,
+          target: v.target,
           type: "straight",
-          animated: touchesActive,
-          style: {
-            stroke: color,
-            strokeWidth: touchesActive ? 1.8 : 1,
-            opacity: dimmed ? 0.03 : touchesActive ? 0.95 : restOpacity,
-          },
+          animated: v.animated,
+          markerEnd: v.directed
+            ? { type: MarkerType.ArrowClosed, width: 12, height: 12, color: v.color }
+            : undefined,
+          style: { stroke: v.color, strokeWidth: v.strokeWidth, opacity: v.opacity },
         };
       }),
     [activeEdges, activeId]
