@@ -152,7 +152,7 @@ body::before {
 @keyframes twinkle {
   0%,
   100% {
-    opacity: 0.12;
+    opacity: 0.32;
   }
   50% {
     opacity: 0.85;
@@ -470,7 +470,7 @@ a:focus-visible {
   z-index: -1;
 }
 .atlas-body-outline {
-  opacity: 0.55;
+  opacity: 0.75;
 }
 .atlas-organ {
   transition: opacity 0.35s ease;
@@ -526,11 +526,11 @@ a:focus-visible {
   text-shadow: 0 1px 5px #000;
 }
 .atlas-starfield {
-  opacity: 0.55;
+  opacity: 0.9;
   transition: opacity 0.5s ease;
 }
 .atlas-starfield[data-focused="true"] {
-  opacity: 0.16;
+  opacity: 0.55;
 }
 .atlas-disease-label {
   transition: opacity 0.2s ease;

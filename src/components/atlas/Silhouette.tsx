@@ -4,7 +4,11 @@ import { ViewportPortal, useViewport, useStore } from "@xyflow/react";
 import type { AtlasBodyPart, AtlasNode } from "@/lib/atlas-types";
 import { zoneCenter, zoneExtent, zoneLabelPosition } from "@/lib/atlas-layout";
 
+import AnatomyDetails from "./AnatomyDetails";
+import { diseaseLandmark } from "@/lib/atlas-anatomy";
+
 type Props = {
+  activeNode?: AtlasNode | null;
   bodyParts: AtlasBodyPart[];
   nodes: AtlasNode[];
   visibleZones: Set<string>;
@@ -15,16 +19,20 @@ type Props = {
 
 // Schematic anatomy: disease clusters denote regions, not precise lesion locations.
 const outline =
-  "M246 240 C243 276 220 290 188 300 C146 309 115 350 100 403 L55 685 Q49 724 70 747 Q88 752 96 720 L149 488 L156 765 Q144 825 162 925 L179 1265 Q175 1295 151 1315 L217 1315 L255 995 Q267 955 280 932 Q293 955 305 995 L343 1315 L409 1315 Q385 1295 381 1265 L398 925 Q416 825 404 765 L411 488 L464 720 Q472 752 490 747 Q511 724 505 685 L460 403 C445 350 414 309 372 300 C340 290 317 276 314 240";
+  "M246 240C245 275 224 290 186 303C150 312 127 333 116 370L97 471Q90 501 87 523L63 682L72 704L95 714L112 668L143 526L151 476L158 641Q167 699 157 766Q143 814 157 868L175 977L182 1106Q174 1143 181 1181L184 1289L169 1310L153 1320Q146 1335 163 1343L217 1343L230 1303L232 1205Q248 1155 247 1110L257 1008L273 945Q280 928 287 945L303 1008L313 1110Q312 1155 328 1205L330 1303L343 1343L397 1343Q414 1335 407 1320L391 1310L376 1289L379 1181Q386 1143 378 1106L385 977L403 868Q417 814 403 766Q393 699 402 641L409 476L417 526L448 668L465 714L488 704L497 682L473 523Q470 501 463 471L444 370C433 333 410 312 374 303C336 290 315 275 314 240";
+
 
 export default function Silhouette({
   bodyParts,
+  activeNode,
   nodes,
   visibleZones,
   activeZone,
   onFocusZone,
   interactive,
 }: Props) {
+  const nodePosition = useStore(state => activeNode ? state.nodeLookup.get(activeNode.id)?.position : undefined);
+  const landmark = activeNode ? diseaseLandmark(activeNode.slug) : undefined;
   const { zoom } = useViewport();
   const narrow = useStore((state) => state.width < 640);
   const counts = new Map<string, number>();
@@ -154,7 +162,7 @@ export default function Silhouette({
             <path d="M313 613C307 642 340 635 348 664C353 693 324 708 296 684Q280 668 292 650" />
             <path d="M205 709Q190 729 205 754L205 823Q212 846 237 835L333 835Q359 837 357 812L357 736Q360 707 335 708Z" />
             <path
-              d="M225 735Q280 717 338 740L233 760Q220 778 337 783L234 805"
+              d="M232 738Q256 728 275 741T330 738 M229 760Q245 750 260 763T329 760 M230 788Q248 778 267 791T327 788"
               fill="none"
             />
           </g>
@@ -169,10 +177,18 @@ export default function Silhouette({
             <circle cx="342" cy="1200" r="26" />
             <circle cx="195" cy="885" r="17" />
             <circle cx="365" cy="885" r="17" />
-            <path d="M275 920V1120 M285 920V1120" strokeDasharray="3 9" />
+            <path d="M275 680V860 M285 680V860" strokeDasharray="3 9" />
           </g>
+          <AnatomyDetails />
         </svg>
       </div>
+      {activeNode && landmark && !landmark.systemic && (
+        <svg className="atlas-anatomy-guide" aria-hidden="true" style={{ position: "absolute", left: 0, top: 0, width: 1400, height: 1500, overflow: "visible", pointerEvents: "none" }}>
+          <path d={`M${(nodePosition ?? activeNode.position).x + 52} ${(nodePosition ?? activeNode.position).y + 9}L${landmark.x} ${landmark.y}`} fill="none" stroke={activeNode.color} strokeWidth="1.5" strokeDasharray="4 6" opacity=".8" />
+          <circle cx={landmark.x} cy={landmark.y} r="12" fill={activeNode.color} fillOpacity=".12" stroke={activeNode.color} />
+          <text x={landmark.x + 18} y={landmark.y - 15} fill="var(--paper)" fontSize="14" stroke="var(--ink-950)" strokeWidth="4" paintOrder="stroke">{landmark.label}</text>
+        </svg>
+      )}
       {parts.map((bp, i) => {
         const center = zoneCenter(bp.layoutZone),
           extent = zoneExtent(bp.layoutZone, counts.get(bp.layoutZone) ?? 1);
@@ -194,18 +210,6 @@ export default function Silhouette({
                 opacity: activeZone && !active ? 0.24 : 1,
               }}
             />
-            {bp.layoutZone === "endocrine" && (
-              <div
-                className="atlas-system-frame"
-                style={{
-                  left: center.x - extent.rx,
-                  top: center.y - extent.ry,
-                  width: extent.rx * 2,
-                  height: extent.ry * 2,
-                  borderColor: `${bp.color}50`,
-                }}
-              />
-            )}
             <div
               className="atlas-region-caption"
               style={

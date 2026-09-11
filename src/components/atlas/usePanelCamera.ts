@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, type RefObject } from "react";
 import { useNodesInitialized, useReactFlow } from "@xyflow/react";
+import { diseaseLandmark } from "@/lib/atlas-anatomy";
 import { viewportForArea } from "@/lib/atlas-camera";
 
 export function usePanelCamera(
@@ -36,13 +37,18 @@ export function usePanelCamera(
           area.width = Math.max(60, overlay.left - box.left - 16);
         }
       }
-      const left = Math.min(...nodes.map((n) => n.position.x));
-      const top = Math.min(...nodes.map((n) => n.position.y));
+      const reference = nodes.length === 1 && typeof nodes[0].data.slug === "string"
+        ? diseaseLandmark(nodes[0].data.slug) : undefined;
+      const anchor = reference && !reference.systemic ? reference : undefined;
+      const left = Math.min(...nodes.map((n) => n.position.x), ...(anchor ? [anchor.x - 28] : []));
+      const top = Math.min(...nodes.map((n) => n.position.y), ...(anchor ? [anchor.y - 36] : []));
       const right = Math.max(
         ...nodes.map((n) => n.position.x + (n.measured?.width ?? 100)),
+        ...(anchor ? [anchor.x + 120] : []),
       );
       const bottom = Math.max(
         ...nodes.map((n) => n.position.y + (n.measured?.height ?? 44)),
+        ...(anchor ? [anchor.y + 28] : []),
       );
       void setViewport(
         viewportForArea(

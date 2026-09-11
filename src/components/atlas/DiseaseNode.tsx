@@ -56,6 +56,7 @@ function DiseaseNode({ data }: NodeProps) {
       style={{
         // fill은 backwards만 — both/forwards면 종료 후에도 키프레임 opacity가
         // 인라인 디밍(opacity)을 영구히 덮어쓴다.
+        width: 104,
         animation: "star-in 0.7s cubic-bezier(0.22, 1, 0.36, 1) backwards",
         animationDelay: `${d.appearDelay ?? 0}ms`,
         opacity: d.dimmed ? 0.1 : 1,

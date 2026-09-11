@@ -8,7 +8,7 @@ function seeded(i: number, salt: number): number {
   return a - Math.floor(a);
 }
 
-const STARS = Array.from({ length: 48 }, (_, i) => ({
+const STARS = Array.from({ length: 96 }, (_, i) => ({
   x: +(seeded(i, 1) * 100).toFixed(2),
   y: +(seeded(i, 2) * 100).toFixed(2),
   size: +(1 + seeded(i, 3) * 1.7).toFixed(2),
@@ -75,6 +75,7 @@ export default function Starfield({ focused = false }: { focused?: boolean }) {
       {STARS.map((s, i) => (
         <span
           key={`star-${i}`}
+          className="atlas-background-star"
           style={{
             position: "absolute",
             left: `${s.x}%`,
@@ -83,8 +84,9 @@ export default function Starfield({ focused = false }: { focused?: boolean }) {
             height: s.size,
             borderRadius: "50%",
             background: "#e9e3d6",
-            opacity: 0.22,
-            animation: `twinkle ${s.dur}s ease-in-out ${s.delay}s infinite`,
+            opacity: 0.65,
+            boxShadow: i % 5 === 0 ? "0 0 7px 1px #c6dcff99" : "0 0 3px #e9e3d655",
+            animation: `twinkle ${s.dur}s ease-in-out -${s.delay}s infinite`,
           }}
         />
       ))}
@@ -94,7 +96,7 @@ export default function Starfield({ focused = false }: { focused?: boolean }) {
         className="absolute inset-0"
         style={{
           background:
-            "radial-gradient(ellipse at 50% 45%, transparent 52%, rgba(4, 6, 9, 0.5) 100%)",
+            "radial-gradient(ellipse at 50% 45%, transparent 52%, rgba(4, 6, 9, 0.2) 100%)",
         }}
       />
     </div>

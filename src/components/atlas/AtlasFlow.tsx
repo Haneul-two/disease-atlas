@@ -155,6 +155,7 @@ function AtlasInner({ data }: { data: AtlasData }) {
       type: "disease",
       position: n.position,
       data: {
+        slug: n.slug,
         label: n.name,
         color: n.color,
         bodyPartName: n.bodyPartName,
@@ -430,6 +431,7 @@ function AtlasInner({ data }: { data: AtlasData }) {
           />
           {!activeTour && <Controls showInteractive={false} />}
           <Silhouette
+            activeNode={data.nodes.find(n => n.id === activeId)}
             onFocusZone={(zone) => {
               void fitView({
                 nodes: data.nodes
@@ -458,7 +460,7 @@ function AtlasInner({ data }: { data: AtlasData }) {
                 ? "부위 이름을 눌러 가까이 살펴보세요"
                 : "질병을 선택해 연결을 살펴보세요"}
             </p>
-            <span>배치는 부위별 분류를 나타냅니다.</span>
+            <span>장기 주변에 펼친 배치 · 선택하면 위치 표시</span>
             <button
               className="atlas-button"
               onClick={() => {
