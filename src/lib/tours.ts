@@ -12,12 +12,18 @@ export type Tour = {
   slug: string;
   title: string;
   description: string;
+  summary: string[];
   steps: TourStep[];
 };
 
 export const TOURS: Tour[] = [
   {
     slug: "road-to-dementia",
+    summary: [
+      "혈관 위험인자에서 인지저하까지 이어지는 이야기를 살펴봤어요.",
+      "혈관성치매와 알츠하이머병을 나란히 알아봤어요.",
+      "정상압수두증까지 둘러보며 감별의 의미를 짚었어요.",
+    ],
     title: "치매로 가는 길",
     description: "혈관 위험인자에서 인지저하까지 — 치매는 어디서 시작되나",
     steps: [
@@ -50,6 +56,11 @@ export const TOURS: Tour[] = [
   },
   {
     slug: "what-is-that-tremor",
+    summary: [
+      "본태성진전과 파킨슨병의 떨림을 비교했어요.",
+      "이차성파킨슨증과 뇌졸중후유증도 함께 살펴봤어요.",
+      "비슷한 증상에서도 원인을 구분하는 이유를 알아봤어요.",
+    ],
     title: "떨림의 정체",
     description: "손이 떨린다고 다 파킨슨병이 아니다 — 떨림 질환 감별 여행",
     steps: [
@@ -77,8 +88,14 @@ export const TOURS: Tour[] = [
   },
   {
     slug: "heart-to-brain",
+    summary: [
+      "고지혈증과 고혈압에서 혈관 이야기를 시작했어요.",
+      "협심증·심근경색·심부전을 차례로 살펴봤어요.",
+      "심장과 뇌를 함께 바라보며 여정을 마무리했어요.",
+    ],
     title: "심장에서 뇌까지",
-    description: "혈관은 하나로 이어져 있다 — 고지혈증에서 뇌졸중까지 한 줄기 이야기",
+    description:
+      "혈관은 하나로 이어져 있다 — 고지혈증에서 뇌졸중까지 한 줄기 이야기",
     steps: [
       {
         diseaseSlug: "dyslipidemia",

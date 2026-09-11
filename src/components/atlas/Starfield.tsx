@@ -8,7 +8,7 @@ function seeded(i: number, salt: number): number {
   return a - Math.floor(a);
 }
 
-const STARS = Array.from({ length: 90 }, (_, i) => ({
+const STARS = Array.from({ length: 48 }, (_, i) => ({
   x: +(seeded(i, 1) * 100).toFixed(2),
   y: +(seeded(i, 2) * 100).toFixed(2),
   size: +(1 + seeded(i, 3) * 1.7).toFixed(2),
@@ -55,9 +55,13 @@ const AURORAS = [
   },
 ] as const;
 
-export default function Starfield() {
+export default function Starfield({ focused = false }: { focused?: boolean }) {
   return (
-    <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
+    <div
+      className="atlas-starfield pointer-events-none absolute inset-0 overflow-hidden"
+      data-focused={focused}
+      aria-hidden
+    >
       {/* 오로라 — 느리게 표류하는 색 웅덩이 */}
       {AURORAS.map((a, i) => (
         <div
@@ -79,7 +83,7 @@ export default function Starfield() {
             height: s.size,
             borderRadius: "50%",
             background: "#e9e3d6",
-            opacity: 0.5,
+            opacity: 0.22,
             animation: `twinkle ${s.dur}s ease-in-out ${s.delay}s infinite`,
           }}
         />

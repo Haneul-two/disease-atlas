@@ -11,7 +11,7 @@ export default async function Home() {
   const plateNo = String(data.bodyParts.length).padStart(2, "0");
 
   return (
-    <div className="relative z-10 flex h-screen flex-col">
+    <div className="relative z-10 flex h-dvh flex-col">
       <header className="flex items-center justify-between gap-4 border-b border-[var(--line)] bg-[var(--ink-850)]/80 px-5 py-3 backdrop-blur-md">
         <div className="flex items-center gap-4">
           {/* 플레이트 카투쉬 */}

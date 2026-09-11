@@ -13,6 +13,9 @@ export type DiseaseNodeData = {
   dimmed?: boolean;
   weight?: number;
   appearDelay?: number;
+  tourStep?: number;
+  overview?: boolean;
+  representative?: boolean;
 };
 
 function hexToRgba(hex: string, a: number): string {
@@ -59,10 +62,21 @@ function DiseaseNode({ data }: NodeProps) {
         transition: "opacity 0.3s ease",
         cursor: "pointer",
       }}
+      data-overview={!!d.overview}
+      data-representative={!!d.representative}
+      data-selected={!!d.selected}
+      data-active={!!d.active}
+      data-tour-step={d.tourStep || undefined}
       title={`${d.label} · ${d.bodyPartName}`}
     >
       <Handle type="target" position={Position.Top} style={handleStyle} />
       <Handle type="source" position={Position.Bottom} style={handleStyle} />
+
+      {!!d.tourStep && (
+        <span className="atlas-node-step" aria-label={`${d.tourStep}단계`}>
+          {d.tourStep}
+        </span>
+      )}
 
       {/* 별 본체 — 코어(밝은 중심) + 부위색 헤일로 */}
       <span
@@ -80,12 +94,14 @@ function DiseaseNode({ data }: NodeProps) {
               ? `0 0 0 2px ${hexToRgba(c, 0.25)}, 0 0 14px 3px ${hexToRgba(c, 0.65)}`
               : `0 0 ${6 + w * 10}px ${1 + w * 2.5}px ${hexToRgba(c, 0.4 + w * 0.25)}`,
           transform: d.active ? "scale(1.22)" : "scale(1)",
-          transition: "box-shadow 0.25s ease, transform 0.25s ease, background 0.25s ease",
+          transition:
+            "box-shadow 0.25s ease, transform 0.25s ease, background 0.25s ease",
         }}
       />
 
       {/* 라벨 — 별 아래 작은 글자 */}
       <span
+        className="atlas-disease-label"
         style={{
           marginTop: 7,
           fontSize: 11.5 + w * 1.5,

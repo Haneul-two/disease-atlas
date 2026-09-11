@@ -1,7 +1,5 @@
 "use client";
-// Atlas 메인 캔버스 — React Flow로 질병 노드를 해부학적으로 배치하고,
-// 부위/엣지 필터·선택 하이라이트·상세 패널을 연결한다.
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ReactFlow,
   ReactFlowProvider,
@@ -12,336 +10,516 @@ import {
   MarkerType,
   type Node,
   type Edge,
-  type NodeMouseHandler,
+  type Viewport,
   useNodesState,
+  useStore,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
-
 import type { AtlasData, EdgeType } from "@/lib/atlas-types";
 import { edgeVisual } from "@/lib/edge-style";
+import { TOURS } from "@/lib/tours";
+import { learningPath, resolveTour, tourStepIndex } from "@/lib/tour-session";
 import DiseaseNode from "./DiseaseNode";
 import Silhouette from "./Silhouette";
 import Starfield from "./Starfield";
 import FilterBar from "./FilterBar";
 import DetailPanel from "./DetailPanel";
 import SearchBox from "./SearchBox";
-import { TOURS } from "@/lib/tours";
 import TourMenu from "./TourMenu";
 import TourCard from "./TourCard";
+import { useAtlasNavigation } from "./useAtlasNavigation";
+import { useTourProgress } from "./useTourProgress";
+import { progressSession } from "@/lib/tour-progress";
+import { usePanelCamera } from "./usePanelCamera";
 
 const nodeTypes = { disease: DiseaseNode };
 
 function AtlasInner({ data }: { data: AtlasData }) {
-  const allZones = useMemo(
+  const [visibleZones, setVisibleZones] = useState(
     () => new Set(data.bodyParts.map((b) => b.layoutZone)),
-    [data.bodyParts]
   );
-  const [visibleZones, setVisibleZones] = useState<Set<string>>(allZones);
-  // 초기에는 핵심 관계(합병·연관)만 — 선이 너무 많으면 별자리가 아니라 실타래가 된다.
-  const [enabledEdges, setEnabledEdges] = useState<Set<EdgeType>>(
-    new Set<EdgeType>(["relation"])
+  const [enabledEdges, setEnabledEdges] = useState(
+    () => new Set<EdgeType>(["relation"]),
   );
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [restoreCamera, setRestoreCamera] = useState(false);
+  const [returnSelection, setReturnSelection] = useState<string | null>(null);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
-  const { setCenter } = useReactFlow();
 
-  // 호버가 선택보다 우선 — 강조 대상 id
-  const activeId = hoveredId ?? selectedId;
+  const overview = useStore((state) => state.transform[2] < 0.7);
+  const canvasRef = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLElement>(null);
+  const savedViewport = useRef<Viewport | null>(null);
+  const [cameraFocus, setCameraFocus] = useState<{
+    id: string;
+    revision: number;
+  } | null>(null);
+  const { getViewport, setViewport, fitView } = useReactFlow();
 
-  // 노드별 연결 수(의미 있는 relation·symptom 기준) → 크기 가중치(0~1)
+  const availableTours = useMemo(
+    () =>
+      TOURS.flatMap((definition) => {
+        const resolved = resolveTour(definition, data.nodes);
+        return resolved ? [resolved] : [];
+      }),
+    [data.nodes],
+  );
+  const { route, navigate } = useAtlasNavigation(data.nodes, availableTours);
+  const { progress, save, clear, storageFailed } =
+    useTourProgress(availableTours);
+  const tour = route.kind === "tour" ? route : null;
+  const selectedId =
+    route.kind === "disease"
+      ? (data.nodes.find((n) => n.slug === route.slug)?.id ?? null)
+      : tour
+        ? returnSelection
+        : null;
+  useEffect(() => {
+    if (tour) save(tour);
+  }, [tour, save]);
+  useEffect(() => {
+    const onHistory = () => {
+      setRestoreCamera(false);
+      setHoveredId(null);
+      setCameraFocus(null);
+      savedViewport.current = null;
+    };
+    window.addEventListener("popstate", onHistory);
+    return () => window.removeEventListener("popstate", onHistory);
+  }, []);
+  const activeTour = availableTours.find((t) => t.slug === tour?.slug) ?? null;
+  const stepIndex = tourStepIndex(
+    tour?.step ?? 0,
+    activeTour?.steps.length ?? 0,
+  );
+  const stepNode = activeTour?.steps[stepIndex].node ?? null;
+  const completed = !!tour?.completed;
+  // Tour controls the view; browsing filters and selection remain intact underneath.
+  const activeId = activeTour
+    ? completed
+      ? null
+      : (stepNode?.id ?? null)
+    : (hoveredId ?? selectedId);
+  const effectiveSelectedId = activeTour
+    ? completed
+      ? null
+      : stepNode?.id
+    : selectedId;
+  const tourNodeIds = useMemo(
+    () => new Set(activeTour?.steps.map((s) => s.node.id)),
+    [activeTour],
+  );
+  const effectiveZones = useMemo(
+    () =>
+      activeTour
+        ? new Set(activeTour.steps.map((s) => s.node.layoutZone))
+        : selectedId
+          ? new Set(visibleZones).add(
+              data.nodes.find((n) => n.id === selectedId)!.layoutZone,
+            )
+          : visibleZones,
+    [activeTour, visibleZones, selectedId, data.nodes],
+  );
+
   const weightById = useMemo(() => {
-    const deg = new Map<string, number>();
+    const degrees = new Map<string, number>();
     for (const e of data.edges) {
       if (!e.types.some((t) => t === "relation" || t === "symptom")) continue;
-      deg.set(e.source, (deg.get(e.source) ?? 0) + 1);
-      deg.set(e.target, (deg.get(e.target) ?? 0) + 1);
+      for (const id of [e.source, e.target])
+        degrees.set(id, (degrees.get(id) ?? 0) + 1);
     }
-    const max = Math.max(1, ...deg.values());
-    const w = new Map<string, number>();
-    for (const n of data.nodes) w.set(n.id, (deg.get(n.id) ?? 0) / max);
-    return w;
+    const max = Math.max(1, ...degrees.values());
+    return new Map(
+      data.nodes.map((n) => [n.id, (degrees.get(n.id) ?? 0) / max]),
+    );
   }, [data.edges, data.nodes]);
 
-  // 검색/관련 질환에서 노드로 점프 — 부위가 숨겨져 있으면 켜고, 선택 + 화면 중앙 이동.
-  const focusNode = useCallback(
-    (nodeId: string) => {
-      const target = data.nodes.find((n) => n.id === nodeId);
-      if (!target) return;
-      setVisibleZones((prev) =>
-        prev.has(target.layoutZone) ? prev : new Set(prev).add(target.layoutZone)
+  const representatives = useMemo(() => {
+    const result = new Set<string>();
+    for (const part of data.bodyParts) {
+      const candidates = data.nodes.filter(
+        (n) => n.layoutZone === part.layoutZone,
       );
-      setSelectedId(nodeId);
-      // 노드 좌표는 좌상단 기준 — 별(점) 중심으로 보정해 중앙 정렬.
-      setCenter(target.position.x + 48, target.position.y + 12, {
-        zoom: 1.2,
-        duration: 600,
-      });
-    },
-    [data.nodes, setCenter]
-  );
+      candidates.sort(
+        (a, b) =>
+          (weightById.get(b.id) ?? 0) - (weightById.get(a.id) ?? 0) ||
+          a.slug.localeCompare(b.slug),
+      );
+      if (candidates[0]) result.add(candidates[0].id);
+    }
+    return result;
+  }, [data.nodes, data.bodyParts, weightById]);
 
-  // ── 투어 모드 ──
-  const [tour, setTour] = useState<{ slug: string; step: number } | null>(null);
-
-  const nodeBySlug = useMemo(() => {
-    const m = new Map<string, (typeof data.nodes)[number]>();
-    for (const n of data.nodes) m.set(n.slug, n);
-    return m;
-  }, [data.nodes]);
-
-  // 활성 투어 — 시드에 없는 slug 스텝은 건너뛰고 경고(데이터 어긋남 안전망)
-  const activeTour = useMemo(() => {
-    if (!tour) return null;
-    const def = TOURS.find((t) => t.slug === tour.slug);
-    if (!def) return null;
-    const steps = def.steps.filter((s) => {
-      if (nodeBySlug.has(s.diseaseSlug)) return true;
-      console.warn(`[tour] 시드에 없는 질병 slug: ${s.diseaseSlug}`);
-      return false;
-    });
-    return steps.length >= 2 ? { def, steps } : null;
-  }, [tour, nodeBySlug]);
-
-  // 스텝 인덱스는 항상 유효 범위로 보정 (slug 필터로 줄었을 수 있음)
-  const stepIndex = activeTour ? Math.min(tour!.step, activeTour.steps.length - 1) : 0;
-  const stepNode = activeTour
-    ? nodeBySlug.get(activeTour.steps[stepIndex].diseaseSlug) ?? null
-    : null;
-
-  // 스텝 변경 시 해당 질병으로 카메라 이동 + 선택 (검색과 같은 경로 재사용)
-  useEffect(() => {
-    if (stepNode) focusNode(stepNode.id);
-  }, [stepNode, focusNode]);
-
-  const startTour = useCallback((slug: string) => setTour({ slug, step: 0 }), []);
-  const exitTour = useCallback(() => {
-    setTour(null);
-    setSelectedId(null);
-  }, []);
-  const stepPrev = useCallback(
-    () => setTour((t) => (t ? { ...t, step: Math.max(0, t.step - 1) } : t)),
-    []
-  );
-  const stepNext = useCallback(
-    () =>
-      setTour((t) =>
-        t && activeTour ? { ...t, step: Math.min(activeTour.steps.length - 1, t.step + 1) } : t
-      ),
-    [activeTour]
-  );
-
-  // 초기 노드 (좌표·data) — 드래그 이동을 위해 useNodesState로 관리.
-  // 등장 애니메이션 딜레이를 부위 순서→부위 내 순번으로 stagger.
   const [nodes, , onNodesChange] = useNodesState<Node>(
-    (() => {
-      const zoneOrder = ["head", "chest", "abdomen", "limbs", "endocrine"];
-      const within = new Map<string, number>();
-      return data.nodes.map((n) => {
-        const i = within.get(n.layoutZone) ?? 0;
-        within.set(n.layoutZone, i + 1);
-        const zi = Math.max(0, zoneOrder.indexOf(n.layoutZone));
-        return {
-          id: n.id,
-          type: "disease",
-          position: n.position,
-          data: {
-            label: n.name,
-            color: n.color,
-            bodyPartName: n.bodyPartName,
-            weight: weightById.get(n.id) ?? 0,
-            appearDelay: zi * 130 + i * 45,
-          },
-        };
-      });
-    })()
+    data.nodes.map((n, i) => ({
+      id: n.id,
+      type: "disease",
+      position: n.position,
+      data: {
+        label: n.name,
+        color: n.color,
+        bodyPartName: n.bodyPartName,
+        weight: weightById.get(n.id) ?? 0,
+        appearDelay: Math.min(i * 25, 900),
+      },
+    })),
   );
-
-  // 현재 보이는 노드 id
-  const visibleNodeIds = useMemo(() => {
-    const set = new Set<string>();
-    for (const n of data.nodes) if (visibleZones.has(n.layoutZone)) set.add(n.id);
-    return set;
-  }, [data.nodes, visibleZones]);
-
-  // 활성 엣지(타입 필터 + 양 끝 노드 보임)
+  const visibleNodeIds = useMemo(
+    () =>
+      new Set(
+        data.nodes
+          .filter((n) => effectiveZones.has(n.layoutZone))
+          .map((n) => n.id),
+      ),
+    [data.nodes, effectiveZones],
+  );
   const activeEdges = useMemo(
     () =>
       data.edges.filter(
         (e) =>
           e.types.some((t) => enabledEdges.has(t)) &&
           visibleNodeIds.has(e.source) &&
-          visibleNodeIds.has(e.target)
+          visibleNodeIds.has(e.target),
       ),
-    [data.edges, enabledEdges, visibleNodeIds]
+    [data.edges, enabledEdges, visibleNodeIds],
   );
-
-  // 강조 노드의 이웃 (호버 우선, 디밍 계산용)
   const neighborIds = useMemo(() => {
+    if (activeTour) return tourNodeIds;
     if (!activeId) return null;
-    const set = new Set<string>([activeId]);
+    const ids = new Set([activeId]);
     for (const e of activeEdges) {
-      if (e.source === activeId) set.add(e.target);
-      if (e.target === activeId) set.add(e.source);
+      if (e.source === activeId) ids.add(e.target);
+      if (e.target === activeId) ids.add(e.source);
     }
-    return set;
-  }, [activeId, activeEdges]);
-
-  // 강조 노드가 속한 부위 — 실루엣 글로우를 밝힌다
-  const activeZone = useMemo(
-    () => data.nodes.find((n) => n.id === activeId)?.layoutZone ?? null,
-    [data.nodes, activeId]
-  );
-
-  // 표시용 노드 — hidden/active/selected/dimmed 반영 (위치는 state에서 유지)
-  const renderNodes: Node[] = useMemo(
+    return ids;
+  }, [activeTour, tourNodeIds, activeId, activeEdges]);
+  const activeZone =
+    data.nodes.find((n) => n.id === activeId)?.layoutZone ?? null;
+  const renderNodes = useMemo(
     () =>
-      nodes.map((n) => {
-        const dimmed = neighborIds ? !neighborIds.has(n.id) : false;
-        return {
-          ...n,
-          hidden: !visibleNodeIds.has(n.id),
-          data: {
-            ...n.data,
-            active: n.id === activeId,
-            selected: n.id === selectedId,
-            dimmed,
-          },
-        };
-      }),
-    [nodes, visibleNodeIds, neighborIds, activeId, selectedId]
+      nodes.map((n) => ({
+        ...n,
+        hidden: !visibleNodeIds.has(n.id),
+        data: {
+          ...n.data,
+          active: n.id === activeId,
+          overview,
+          representative: representatives.has(n.id),
+          selected: n.id === effectiveSelectedId,
+          dimmed: neighborIds ? !neighborIds.has(n.id) : false,
+          tourStep: activeTour
+            ? activeTour.steps.findIndex((s) => s.node.id === n.id) + 1
+            : 0,
+        },
+      })),
+    [
+      nodes,
+      visibleNodeIds,
+      activeId,
+      effectiveSelectedId,
+      neighborIds,
+      activeTour,
+      overview,
+      representatives,
+    ],
   );
+  const renderEdges: Edge[] = useMemo(() => {
+    if (activeTour)
+      return learningPath(activeTour, stepIndex, completed).map((e) => ({
+        id: e.id,
+        source: e.source,
+        target: e.target,
+        type: "straight",
+        selectable: false,
+        className: "atlas-learning-path",
+        // Learning order is deliberately marker-free, distinct from medical arrows.
+        style: {
+          stroke: e.current ? "var(--bone-bright)" : "var(--bone)",
+          strokeWidth: e.current ? 2.5 : 1.5,
+          strokeDasharray: "6 7",
+          opacity: e.current || e.visited ? 0.95 : 0.35,
+        },
+      }));
+    return activeEdges.map((e) => {
+      const v = edgeVisual(e, activeId);
+      return {
+        id: e.id,
+        source: v.source,
+        target: v.target,
+        type: "straight",
+        animated: v.animated,
+        markerEnd: v.directed
+          ? {
+              type: MarkerType.ArrowClosed,
+              width: 12,
+              height: 12,
+              color: v.color,
+            }
+          : undefined,
+        style: {
+          stroke: v.color,
+          strokeWidth: v.strokeWidth,
+          opacity: !activeId ? v.opacity * (overview ? 0.4 : 0.55) : v.opacity,
+        },
+      };
+    });
+  }, [activeTour, stepIndex, completed, activeEdges, activeId, overview]);
 
-  // 표시용 엣지 — 별자리 선: 평소엔 아주 희미한 직선, 강조 노드에 닿는 선만 점등
-  const renderEdges: Edge[] = useMemo(
-    () =>
-      activeEdges.map((e) => {
-        const v = edgeVisual(e, activeId);
-        return {
-          id: e.id,
-          source: v.source,
-          target: v.target,
-          type: "straight",
-          animated: v.animated,
-          markerEnd: v.directed
-            ? { type: MarkerType.ArrowClosed, width: 12, height: 12, color: v.color }
-            : undefined,
-          style: { stroke: v.color, strokeWidth: v.strokeWidth, opacity: v.opacity },
-        };
-      }),
-    [activeEdges, activeId]
-  );
-
-  // 투어 중에는 선택이 투어가 주도한다 — 클릭으로 카드와 어긋나지 않게 잠금
-  const onNodeClick: NodeMouseHandler = useCallback(
-    (_, node) => {
-      if (activeTour) return;
-      setSelectedId(node.id);
+  const focusNode = useCallback(
+    (id: string) => {
+      const node = data.nodes.find((n) => n.id === id);
+      if (!node) return;
+      setRestoreCamera(false);
+      setCameraFocus((previous) => ({
+        id,
+        revision: (previous?.revision ?? 0) + 1,
+      }));
+      setHoveredId(null);
+      setVisibleZones((prev) => new Set(prev).add(node.layoutZone));
+      navigate({ kind: "disease", slug: node.slug });
     },
-    [activeTour]
+    [data.nodes, navigate],
   );
-
-  const onNodeMouseEnter: NodeMouseHandler = useCallback((_, node) => {
-    setHoveredId(node.id);
-  }, []);
-
-  const onNodeMouseLeave: NodeMouseHandler = useCallback(() => {
+  const startTour = useCallback(
+    (slug: string, resume = false) => {
+      const definition = availableTours.find((t) => t.slug === slug);
+      if (!definition) return;
+      if (!savedViewport.current) {
+        savedViewport.current = getViewport();
+        setReturnSelection(selectedId);
+      }
+      setRestoreCamera(false);
+      setHoveredId(null);
+      const session = resume
+        ? progressSession(definition, progress[slug])
+        : { slug, step: 0, completed: false };
+      save(session, !resume);
+      navigate({ kind: "tour", ...session });
+    },
+    [availableTours, getViewport, selectedId, progress, save, navigate],
+  );
+  const exitTour = useCallback(() => {
+    setRestoreCamera(!!savedViewport.current);
+    setCameraFocus(null);
     setHoveredId(null);
-  }, []);
-
-  const toggleZone = useCallback((zone: string) => {
-    setVisibleZones((prev) => {
-      const next = new Set(prev);
-      if (next.has(zone)) next.delete(zone);
-      else next.add(zone);
-      return next;
-    });
-  }, []);
-
-  const toggleEdge = useCallback((type: EdgeType) => {
-    setEnabledEdges((prev) => {
-      const next = new Set(prev);
-      if (next.has(type)) next.delete(type);
-      else next.add(type);
-      return next;
-    });
-  }, []);
-
-  const selectedNode = useMemo(
-    () => data.nodes.find((n) => n.id === selectedId) ?? null,
-    [data.nodes, selectedId]
+    const node = data.nodes.find((n) => n.id === returnSelection);
+    navigate(node ? { kind: "disease", slug: node.slug } : { kind: "browse" });
+    if (savedViewport.current) {
+      void setViewport(savedViewport.current, { duration: 0 });
+    } else if (!node) {
+      requestAnimationFrame(() => {
+        void fitView({ padding: 0.2, duration: 0 });
+      });
+    }
+    savedViewport.current = null;
+    requestAnimationFrame(() =>
+      document
+        .getElementById("atlas-tour-trigger")
+        ?.focus({ preventScroll: true }),
+    );
+  }, [setViewport, fitView, data.nodes, returnSelection, navigate]);
+  const goToStep = useCallback(
+    (index: number) => {
+      if (!activeTour) return;
+      setHoveredId(null);
+      navigate({
+        kind: "tour",
+        slug: activeTour.slug,
+        step: tourStepIndex(index, activeTour.steps.length),
+        completed: false,
+      });
+    },
+    [activeTour, navigate],
   );
+  const closeDetail = useCallback(() => {
+    navigate({ kind: "browse" });
+    setHoveredId(null);
+  }, [navigate]);
+  const selectedNode = data.nodes.find((n) => n.id === selectedId) ?? null;
+  const cameraIds = activeTour
+    ? (completed
+        ? activeTour.steps
+        : activeTour.steps.slice(Math.max(0, stepIndex - 1), stepIndex + 1)
+      ).map((s) => s.node.id)
+    : selectedId && !restoreCamera
+      ? [selectedId]
+      : [];
+  usePanelCamera(
+    canvasRef,
+    panelRef,
+    cameraIds,
+    `${tour?.slug ?? "browse"}:${stepIndex}:${completed}:${selectedId}:${cameraFocus?.revision ?? 0}`,
+  );
+  const nextTour = activeTour
+    ? availableTours[
+        (availableTours.indexOf(activeTour) + 1) % availableTours.length
+      ]
+    : null;
 
   return (
-    <div className="flex h-full flex-col">
-      <FilterBar
-        bodyParts={data.bodyParts}
-        visibleZones={visibleZones}
-        toggleZone={toggleZone}
-        enabledEdges={enabledEdges}
-        toggleEdge={toggleEdge}
-      />
-      <div className="relative flex-1">
-        {/* 그래프 뒤 고정 분위기 레이어 — 팬/줌과 분리되어 깊이감을 만든다 */}
-        <Starfield />
+    <div className="flex h-full min-h-0 flex-col">
+      {activeTour ? (
+        <div className="atlas-tour-bar">
+          <span className="flex items-center gap-2">
+            <span
+              aria-hidden="true"
+              className="w-6 border-t-2 border-dashed border-[var(--bone)]"
+            />
+            학습 경로
+          </span>
+          <span className="text-xs text-[var(--paper-dim)]">
+            투어 중에는 경로에 집중해요
+          </span>
+          <button className="atlas-button ml-auto" onClick={exitTour}>
+            자유 탐색
+          </button>
+        </div>
+      ) : (
+        <FilterBar
+          bodyParts={data.bodyParts}
+          visibleZones={visibleZones}
+          toggleZone={(zone) =>
+            setVisibleZones((prev) => {
+              const next = new Set(prev);
+              if (next.has(zone)) next.delete(zone);
+              else next.add(zone);
+              return next;
+            })
+          }
+          enabledEdges={enabledEdges}
+          toggleEdge={(type) =>
+            setEnabledEdges((prev) => {
+              const next = new Set(prev);
+              if (next.has(type)) next.delete(type);
+              else next.add(type);
+              return next;
+            })
+          }
+        />
+      )}
+      <div ref={canvasRef} className="relative min-h-0 flex-1">
+        <Starfield focused={!!activeId || !!activeTour} />
         <ReactFlow
           nodes={renderNodes}
           edges={renderEdges}
           nodeTypes={nodeTypes}
           onNodesChange={onNodesChange}
-          onNodeClick={onNodeClick}
-          onNodeMouseEnter={onNodeMouseEnter}
-          onNodeMouseLeave={onNodeMouseLeave}
-          onPaneClick={() => { if (!activeTour) setSelectedId(null); }}
+          onNodeClick={(_, node) => {
+            if (!activeTour) focusNode(node.id);
+          }}
+          onNodeMouseEnter={(_, node) => {
+            if (!activeTour) setHoveredId(node.id);
+          }}
+          onNodeMouseLeave={() => setHoveredId(null)}
+          onPaneClick={() => {
+            if (!activeTour) closeDetail();
+          }}
+          nodesDraggable={!activeTour}
+          nodesFocusable={!activeTour}
+          nodesConnectable={false}
           fitView
           fitViewOptions={{ padding: 0.2 }}
           minZoom={0.2}
           maxZoom={2.5}
           proOptions={{ hideAttribution: true }}
         >
-          {/* 별먼지 — 미세한 점 그리드 */}
           <Background
             variant={BackgroundVariant.Dots}
             gap={30}
             size={1}
             color="var(--rf-dots)"
           />
-          {/* 투어 중엔 좌하단을 TourCard가 차지 — 컨트롤 숨김(휠 줌은 유지) */}
           {!activeTour && <Controls showInteractive={false} />}
           <Silhouette
+            onFocusZone={(zone) => {
+              void fitView({
+                nodes: data.nodes
+                  .filter((n) => n.layoutZone === zone)
+                  .map((n) => ({ id: n.id })),
+                padding: 0.28,
+                maxZoom: 1.25,
+                duration: window.matchMedia("(prefers-reduced-motion: reduce)")
+                  .matches
+                  ? 0
+                  : 550,
+              });
+            }}
+            interactive={!activeTour && !selectedNode}
             bodyParts={data.bodyParts}
             nodes={data.nodes}
-            visibleZones={visibleZones}
+            visibleZones={effectiveZones}
             activeZone={activeZone}
           />
         </ReactFlow>
-        {!activeTour && (
+        {!activeTour && !selectedNode && (
+          <div className="atlas-view-key">
+            <p className="atlas-eyebrow">인체의 별자리</p>
+            <p>
+              {overview
+                ? "부위 이름을 눌러 가까이 살펴보세요"
+                : "질병을 선택해 연결을 살펴보세요"}
+            </p>
+            <span>배치는 부위별 분류를 나타냅니다.</span>
+            <button
+              className="atlas-button"
+              onClick={() => {
+                void fitView({ padding: 0.2, duration: 0 });
+              }}
+            >
+              전체 지도
+            </button>
+          </div>
+        )}
+        {!activeTour && selectedNode && (
           <DetailPanel
+            key={selectedNode.id}
             node={selectedNode}
             data={data}
-            onClose={() => setSelectedId(null)}
+            panelRef={panelRef}
+            onClose={closeDetail}
             onSelectRelated={focusNode}
           />
         )}
         {!activeTour && <SearchBox nodes={data.nodes} onSelect={focusNode} />}
-        {!activeTour && <TourMenu onStart={startTour} />}
-        {activeTour && stepNode && (
+        {!activeTour && (
+          <TourMenu
+            tours={availableTours}
+            onStart={startTour}
+            progress={progress}
+            onClear={clear}
+            storageFailed={storageFailed}
+          />
+        )}
+        {activeTour && (
           <TourCard
-            tourTitle={activeTour.def.title}
+            key={activeTour.slug}
+            tour={activeTour}
             stepIndex={stepIndex}
-            stepCount={activeTour.steps.length}
-            diseaseName={stepNode.name}
-            color={stepNode.color}
-            narrative={activeTour.steps[stepIndex].narrative}
-            onPrev={stepPrev}
-            onNext={stepNext}
+            completed={completed}
+            storageFailed={storageFailed}
+            panelRef={panelRef}
+            onStep={goToStep}
+            onComplete={() =>
+              navigate({
+                kind: "tour",
+                slug: activeTour.slug,
+                step: activeTour.steps.length - 1,
+                completed: true,
+              })
+            }
             onExit={exitTour}
+            onRestart={() => startTour(activeTour.slug)}
+            nextTourTitle={
+              nextTour?.slug !== activeTour.slug ? nextTour?.title : undefined
+            }
+            onStartNext={() => {
+              if (nextTour) startTour(nextTour.slug);
+            }}
           />
         )}
       </div>
     </div>
   );
 }
-
 export default function AtlasFlow({ data }: { data: AtlasData }) {
   return (
     <ReactFlowProvider>
