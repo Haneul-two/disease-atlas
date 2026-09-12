@@ -682,3 +682,55 @@ a:focus-visible {
 }
 .atlas-body-copy { line-height: 1.8; }
 .atlas-disclaimer { word-break: keep-all; }
+.atlas-brand-title {
+  font-size: 30px;
+  line-height: 1.2;
+  letter-spacing: -.035em;
+  color: var(--paper);
+}
+@media (min-width: 640px) {
+  .atlas-brand-title { font-size: 36px; }
+}
+.atlas-experience .atlas-map-controls {
+  --xy-controls-button-background-color: var(--ink-800);
+  --xy-controls-button-background-color-hover: var(--ink-700);
+  --xy-controls-button-color: var(--paper);
+  --xy-controls-button-color-hover: var(--bone-bright);
+  display: flex;
+  gap: 8px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  overflow: visible;
+  box-shadow: none;
+}
+.atlas-map-controls .react-flow__controls-button {
+  box-sizing: border-box;
+  width: 44px;
+  height: 44px;
+  padding: 13px;
+  border: 1px solid var(--line-strong);
+  border-radius: 50%;
+  background: var(--ink-800);
+  color: var(--paper);
+  box-shadow: 0 3px 12px #0004;
+  transition: background-color .2s ease, border-color .2s ease;
+}
+.atlas-map-controls .react-flow__controls-button:hover {
+  background: var(--ink-700);
+  border-color: var(--bone);
+  color: var(--bone-bright);
+}
+.atlas-map-controls .react-flow__controls-button:focus-visible {
+  outline: 2px solid var(--bone-bright);
+  outline-offset: 3px;
+}
+.atlas-map-controls .react-flow__controls-button:disabled { opacity: .4; cursor: default; }
+.atlas-map-controls .react-flow__controls-button svg {
+  width: 16px;
+  height: 16px;
+  max-width: none;
+  max-height: none;
+  fill: currentColor;
+}

@@ -509,7 +509,7 @@ function AtlasInner({ data }: { data: AtlasData }) {
             size={1}
             color="var(--rf-dots)"
           />
-          {!activeTour && <Controls showInteractive={false} />}
+          {!activeTour && <Controls className="atlas-map-controls" showInteractive={false} />}
           <OrganTargets illustrated={view.settings.layer === "illustration"} onSelect={key => openExploration({ kind: "organ", key })}
             selected={exploredOrgan} enabled={!activeTour} visibleZones={effectiveZones} />
           <Silhouette
