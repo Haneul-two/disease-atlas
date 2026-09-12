@@ -19,6 +19,9 @@ import type { AtlasData, EdgeType } from "@/lib/atlas-types";
 import { edgeVisual } from "@/lib/edge-style";
 import { TOURS } from "@/lib/tours";
 import { learningPath, resolveTour, tourStepIndex } from "@/lib/tour-session";
+import ExplorationPanel, { edgeTitle, type Exploration } from "./ExplorationPanel";
+import OrganTargets from "./OrganTargets";
+import { ANATOMY_LANDMARKS, diseaseLandmarkKey } from "@/lib/atlas-anatomy";
 import DiseaseNode from "./DiseaseNode";
 import Silhouette from "./Silhouette";
 import Starfield from "./Starfield";
@@ -43,9 +46,12 @@ function AtlasInner({ data }: { data: AtlasData }) {
   );
   const [restoreCamera, setRestoreCamera] = useState(false);
   const [returnSelection, setReturnSelection] = useState<string | null>(null);
+  const [exploration, setExploration] = useState<Exploration | null>(null);
+  const explorationTrigger = useRef<Element | null>(null);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
 
-  const overview = useStore((state) => state.transform[2] < 0.7);
+  const zoom = useStore((state) => state.transform[2]);
+  const overview = zoom < 0.7;
   const canvasRef = useRef<HTMLDivElement>(null);
   const panelRef = useRef<HTMLElement>(null);
   const savedViewport = useRef<Viewport | null>(null);
@@ -79,12 +85,33 @@ function AtlasInner({ data }: { data: AtlasData }) {
   useEffect(() => {
     const onHistory = () => {
       setRestoreCamera(false);
+      setExploration(null);
       setHoveredId(null);
       setCameraFocus(null);
       savedViewport.current = null;
     };
     window.addEventListener("popstate", onHistory);
     return () => window.removeEventListener("popstate", onHistory);
+  }, []);
+  const openExploration = useCallback((next: Exploration) => {
+    explorationTrigger.current = document.activeElement;
+    setExploration(next);
+    setRestoreCamera(false);
+    setHoveredId(null);
+    navigate({ kind: "browse" });
+    if (next.kind === "organ") {
+      const zones = data.nodes.filter(n => diseaseLandmarkKey(n.slug) === next.key).map(n => n.layoutZone);
+      setVisibleZones(previous => new Set([...previous, ...zones]));
+    }
+  }, [data.nodes, navigate]);
+  const closeExploration = useCallback(() => {
+    setExploration(null);
+    setHoveredId(null);
+    requestAnimationFrame(() => {
+      const trigger = explorationTrigger.current;
+      if (trigger?.isConnected && (trigger instanceof HTMLElement || trigger instanceof SVGElement)) trigger.focus({ preventScroll: true });
+      else document.getElementById("atlas-organ-trigger")?.focus({ preventScroll: true });
+    });
   }, []);
   const activeTour = availableTours.find((t) => t.slug === tour?.slug) ?? null;
   const stepIndex = tourStepIndex(
@@ -183,8 +210,13 @@ function AtlasInner({ data }: { data: AtlasData }) {
       ),
     [data.edges, enabledEdges, visibleNodeIds],
   );
+  const exploredEdge = exploration?.kind === "edge" ? activeEdges.find(e => e.id === exploration.id) : null;
+  const exploredOrgan = exploration?.kind === "organ" ? exploration.key : null;
+  const organIds = useMemo(() => new Set(data.nodes.filter(n => diseaseLandmarkKey(n.slug) === exploredOrgan).map(n => n.id)), [data.nodes, exploredOrgan]);
   const neighborIds = useMemo(() => {
     if (activeTour) return tourNodeIds;
+    if (exploredEdge) return new Set([exploredEdge.source, exploredEdge.target]);
+    if (exploredOrgan) return organIds;
     if (!activeId) return null;
     const ids = new Set([activeId]);
     for (const e of activeEdges) {
@@ -192,9 +224,9 @@ function AtlasInner({ data }: { data: AtlasData }) {
       if (e.target === activeId) ids.add(e.source);
     }
     return ids;
-  }, [activeTour, tourNodeIds, activeId, activeEdges]);
+  }, [activeTour, tourNodeIds, activeId, activeEdges, exploredEdge, exploredOrgan, organIds]);
   const activeZone =
-    data.nodes.find((n) => n.id === activeId)?.layoutZone ?? null;
+    data.nodes.find((n) => n.id === activeId)?.layoutZone ?? (exploredOrgan ? ANATOMY_LANDMARKS[exploredOrgan].zone : null);
   const renderNodes = useMemo(
     () =>
       nodes.map((n) => ({
@@ -203,7 +235,7 @@ function AtlasInner({ data }: { data: AtlasData }) {
         data: {
           ...n.data,
           active: n.id === activeId,
-          overview,
+          overview: overview && !exploredOrgan && !exploredEdge,
           representative: representatives.has(n.id),
           selected: n.id === effectiveSelectedId,
           dimmed: neighborIds ? !neighborIds.has(n.id) : false,
@@ -221,6 +253,8 @@ function AtlasInner({ data }: { data: AtlasData }) {
       activeTour,
       overview,
       representatives,
+      exploredOrgan,
+      exploredEdge,
     ],
   );
   const renderEdges: Edge[] = useMemo(() => {
@@ -231,6 +265,7 @@ function AtlasInner({ data }: { data: AtlasData }) {
         target: e.target,
         type: "straight",
         selectable: false,
+        focusable: false,
         className: "atlas-learning-path",
         // Learning order is deliberately marker-free, distinct from medical arrows.
         style: {
@@ -247,7 +282,19 @@ function AtlasInner({ data }: { data: AtlasData }) {
         source: v.source,
         target: v.target,
         type: "straight",
-        animated: v.animated,
+        selectable: false,
+        focusable: true,
+        ariaRole: "button",
+        ariaLabel: `${edgeTitle(e, data.nodes)} 연결 설명`,
+        interactionWidth: 24 / zoom,
+        domAttributes: { onKeyDown: event => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault(); event.stopPropagation();
+            openExploration({ kind: "edge", id: e.id });
+          }
+        } },
+        className: (exploredEdge ? exploredEdge.id !== e.id : exploredOrgan ? !(organIds.has(e.source) && organIds.has(e.target)) : activeId ? e.source !== activeId && e.target !== activeId : false) ? "atlas-edge-dimmed" : undefined,
+        animated: !exploredEdge && v.animated,
         markerEnd: v.directed
           ? {
               type: MarkerType.ArrowClosed,
@@ -258,17 +305,20 @@ function AtlasInner({ data }: { data: AtlasData }) {
           : undefined,
         style: {
           stroke: v.color,
-          strokeWidth: v.strokeWidth,
-          opacity: !activeId ? v.opacity * (overview ? 0.4 : 0.55) : v.opacity,
+          strokeWidth: exploredEdge?.id === e.id ? 3 : v.strokeWidth,
+          opacity: exploredEdge ? (exploredEdge.id === e.id ? 1 : .025)
+            : exploredOrgan ? (organIds.has(e.source) && organIds.has(e.target) ? .65 : .025)
+            : !activeId ? v.opacity * (overview ? 0.4 : 0.55) : v.opacity,
         },
       };
     });
-  }, [activeTour, stepIndex, completed, activeEdges, activeId, overview]);
+  }, [activeTour, stepIndex, completed, activeEdges, activeId, overview, exploredEdge, exploredOrgan, organIds, zoom, data.nodes, openExploration]);
 
   const focusNode = useCallback(
     (id: string) => {
       const node = data.nodes.find((n) => n.id === id);
       if (!node) return;
+      setExploration(null);
       setRestoreCamera(false);
       setCameraFocus((previous) => ({
         id,
@@ -284,6 +334,7 @@ function AtlasInner({ data }: { data: AtlasData }) {
     (slug: string, resume = false) => {
       const definition = availableTours.find((t) => t.slug === slug);
       if (!definition) return;
+      setExploration(null);
       if (!savedViewport.current) {
         savedViewport.current = getViewport();
         setReturnSelection(selectedId);
@@ -341,14 +392,17 @@ function AtlasInner({ data }: { data: AtlasData }) {
         ? activeTour.steps
         : activeTour.steps.slice(Math.max(0, stepIndex - 1), stepIndex + 1)
       ).map((s) => s.node.id)
-    : selectedId && !restoreCamera
-      ? [selectedId]
-      : [];
+    : exploredEdge ? [exploredEdge.source, exploredEdge.target]
+      : exploredOrgan ? [...organIds]
+      : selectedId && !restoreCamera
+        ? [selectedId]
+        : [];
   usePanelCamera(
     canvasRef,
     panelRef,
     cameraIds,
-    `${tour?.slug ?? "browse"}:${stepIndex}:${completed}:${selectedId}:${cameraFocus?.revision ?? 0}`,
+    `${tour?.slug ?? "browse"}:${stepIndex}:${completed}:${selectedId}:${cameraFocus?.revision ?? 0}:${exploredOrgan}:${exploredEdge?.id}`,
+    exploration ? 64 : 0,
   );
   const nextTour = activeTour
     ? availableTours[
@@ -378,41 +432,44 @@ function AtlasInner({ data }: { data: AtlasData }) {
         <FilterBar
           bodyParts={data.bodyParts}
           visibleZones={visibleZones}
-          toggleZone={(zone) =>
+          toggleZone={(zone) => {
+            setExploration(null);
             setVisibleZones((prev) => {
               const next = new Set(prev);
               if (next.has(zone)) next.delete(zone);
               else next.add(zone);
               return next;
-            })
-          }
+            });
+          }}
           enabledEdges={enabledEdges}
-          toggleEdge={(type) =>
+          toggleEdge={(type) => {
+            setExploration(null);
             setEnabledEdges((prev) => {
               const next = new Set(prev);
               if (next.has(type)) next.delete(type);
               else next.add(type);
               return next;
-            })
-          }
+            });
+          }}
         />
       )}
       <div ref={canvasRef} className="relative min-h-0 flex-1">
-        <Starfield focused={!!activeId || !!activeTour} />
+        <Starfield focused={!!activeId || !!activeTour || !!exploration} />
         <ReactFlow
           nodes={renderNodes}
           edges={renderEdges}
           nodeTypes={nodeTypes}
           onNodesChange={onNodesChange}
+          onEdgeClick={(event, edge) => { if (!activeTour) { event.stopPropagation(); openExploration({ kind: "edge", id: edge.id }); } }}
           onNodeClick={(_, node) => {
             if (!activeTour) focusNode(node.id);
           }}
           onNodeMouseEnter={(_, node) => {
-            if (!activeTour) setHoveredId(node.id);
+            if (!activeTour && !exploration) setHoveredId(node.id);
           }}
           onNodeMouseLeave={() => setHoveredId(null)}
           onPaneClick={() => {
-            if (!activeTour) closeDetail();
+            if (!activeTour) { closeExploration(); closeDetail(); }
           }}
           nodesDraggable={!activeTour}
           nodesFocusable={!activeTour}
@@ -430,9 +487,12 @@ function AtlasInner({ data }: { data: AtlasData }) {
             color="var(--rf-dots)"
           />
           {!activeTour && <Controls showInteractive={false} />}
+          <OrganTargets onSelect={key => openExploration({ kind: "organ", key })}
+            selected={exploredOrgan} enabled={!activeTour} visibleZones={effectiveZones} />
           <Silhouette
             activeNode={data.nodes.find(n => n.id === activeId)}
             onFocusZone={(zone) => {
+              setExploration(null);
               void fitView({
                 nodes: data.nodes
                   .filter((n) => n.layoutZone === zone)
@@ -452,13 +512,13 @@ function AtlasInner({ data }: { data: AtlasData }) {
             activeZone={activeZone}
           />
         </ReactFlow>
-        {!activeTour && !selectedNode && (
+        {!activeTour && !selectedNode && !exploration && (
           <div className="atlas-view-key">
             <p className="atlas-eyebrow">인체의 별자리</p>
             <p>
               {overview
-                ? "부위 이름을 눌러 가까이 살펴보세요"
-                : "질병을 선택해 연결을 살펴보세요"}
+                ? "장기나 부위 이름을 눌러 살펴보세요"
+                : "질병이나 관계선을 눌러 살펴보세요"}
             </p>
             <span>장기 주변에 펼친 배치 · 선택하면 위치 표시</span>
             <button
@@ -471,7 +531,7 @@ function AtlasInner({ data }: { data: AtlasData }) {
             </button>
           </div>
         )}
-        {!activeTour && selectedNode && (
+        {!activeTour && selectedNode && !exploration && (
           <DetailPanel
             key={selectedNode.id}
             node={selectedNode}
@@ -479,8 +539,14 @@ function AtlasInner({ data }: { data: AtlasData }) {
             panelRef={panelRef}
             onClose={closeDetail}
             onSelectRelated={focusNode}
+            onInspectRelation={id => openExploration({ kind: "edge", id })}
+            visibleEdges={activeEdges}
           />
         )}
+        {!activeTour && !exploration && <button id="atlas-organ-trigger" className="atlas-organ-trigger" onClick={() => openExploration({ kind: "organs" })}>장기 탐색</button>}
+        {!activeTour && exploration && <ExplorationPanel exploration={exploration} data={data} panelRef={panelRef}
+          onClose={closeExploration} onOrgan={key => openExploration({ kind: "organ", key })}
+          onIndex={() => openExploration({ kind: "organs" })} onDisease={focusNode} />}
         {!activeTour && <SearchBox nodes={data.nodes} onSelect={focusNode} />}
         {!activeTour && (
           <TourMenu

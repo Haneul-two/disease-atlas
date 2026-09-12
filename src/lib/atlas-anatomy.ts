@@ -51,6 +51,9 @@ const GROUPS: Record<string, string[]> = {
   pelvic: ["pcos"],
 };
 const LANDMARK_BY_SLUG = new Map(Object.entries(GROUPS).flatMap(([key, slugs]) => slugs.map(slug => [slug, key] as const)));
+export function diseaseLandmarkKey(slug: string) {
+  return LANDMARK_BY_SLUG.get(slug);
+}
 export function diseaseLandmark(slug: string) {
   const key = LANDMARK_BY_SLUG.get(slug);
   return key ? ANATOMY_LANDMARKS[key] : undefined;

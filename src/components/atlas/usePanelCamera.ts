@@ -9,6 +9,7 @@ export function usePanelCamera(
   panel: RefObject<HTMLElement | null>,
   targetIds: string[],
   request: string,
+  topInset = 0,
 ) {
   const { getNodes, setViewport } = useReactFlow();
   const ready = useNodesInitialized();
@@ -26,10 +27,10 @@ export function usePanelCamera(
       if (!nodes.length) return;
       const box = host.getBoundingClientRect();
       const overlay = panel.current?.getBoundingClientRect();
-      const area = { x: 0, y: 0, width: box.width, height: box.height };
+      const area = { x: 0, y: topInset, width: box.width, height: box.height - topInset };
       if (overlay) {
         if (window.matchMedia("(max-width: 639px)").matches) {
-          area.height = Math.max(60, overlay.top - box.top - 12);
+          area.height = Math.max(60, overlay.top - box.top - 12 - topInset);
         } else if (overlay.left - box.left < box.width / 2) {
           area.x = overlay.right - box.left + 16;
           area.width = Math.max(60, box.width - area.x);
@@ -75,5 +76,5 @@ export function usePanelCamera(
       observer.disconnect();
       motion.removeEventListener("change", schedule);
     };
-  }, [canvas, panel, targetKey, request, ready, getNodes, setViewport]);
+  }, [canvas, panel, targetKey, request, ready, getNodes, setViewport, topInset]);
 }

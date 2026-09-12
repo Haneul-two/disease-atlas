@@ -1,4 +1,4 @@
-﻿import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 
 async function startTour(page: Page, title: string) {
   await page.getByRole("button", { name: /투어$/ }).click();
@@ -133,7 +133,7 @@ test("모바일 질병 상세는 접이식 시트로 열리고 Escape로 닫힌�
   await page.goto("/");
   await page.getByRole("button", { name: /질병 검색/ }).click();
   await page.getByRole("textbox").fill("고혈압");
-  await page.getByRole("button", { name: /고혈압/ }).click();
+  await page.getByRole("list").getByRole("button", { name: /고혈압/ }).click();
   const panel = page.locator("aside");
   await expect(
     panel.getByRole("heading", { name: "고혈압", exact: true }),

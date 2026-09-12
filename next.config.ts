@@ -1,7 +1,10 @@
-import type { NextConfig } from "next";
+﻿import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  experimental: {
+    // Persistent build cache reused stale global CSS during local verification.
+    turbopackFileSystemCacheForBuild: false,
+  },
 };
 
 export default nextConfig;

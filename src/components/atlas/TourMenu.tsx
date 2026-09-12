@@ -132,6 +132,7 @@ export default function TourMenu({
                         {t.title}
                       </span>
                       <span className="mt-1 block text-xs leading-relaxed text-[var(--muted)]">
+                        {t.audience && <span className="mb-1 block text-[var(--bone)]">{t.audience}</span>}
                         {t.description}
                       </span>
                       <span className="mt-3 block text-xs text-[var(--bone-bright)]">

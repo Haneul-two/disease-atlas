@@ -1,3 +1,4 @@
+import { SENIOR_TOURS } from "./senior-tours";
 // Disease Atlas — 퀵 투어 정의 (정적 큐레이션)
 // 질병은 DB id 대신 slug로 참조한다(시드 간 안정적). 교육용 해설이며 의학적 조언이 아니다.
 
@@ -10,6 +11,8 @@ export type TourStep = {
 
 export type Tour = {
   slug: string;
+  audience?: string;
+  sources?: { title: string; url: string }[];
   title: string;
   description: string;
   summary: string[];
@@ -129,4 +132,5 @@ export const TOURS: Tour[] = [
       },
     ],
   },
+  ...SENIOR_TOURS,
 ];

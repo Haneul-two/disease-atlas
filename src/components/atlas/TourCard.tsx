@@ -221,6 +221,12 @@ export default function TourCard({
       <p className="mt-5 text-xs leading-relaxed text-[var(--muted)]">
         점선은 학습 순서이며, 질병의 진행 경로를 뜻하지 않습니다.
       </p>
+      {!!tour.sources?.length && <details className="mt-5 text-sm text-[var(--paper-dim)]">
+        <summary className="cursor-pointer py-3">참고 자료</summary>
+        <ul className="space-y-2">{tour.sources.map(source => <li key={source.url}>
+          <a className="underline underline-offset-4" href={source.url} target="_blank" rel="noreferrer">{source.title}</a>
+        </li>)}</ul>
+      </details>}
     </AtlasSheet>
   );
 }

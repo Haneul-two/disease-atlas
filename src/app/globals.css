@@ -598,3 +598,23 @@ a:focus-visible {
 }
 
 .atlas-region-caption { z-index:10; pointer-events:auto; }
+
+.atlas-organ-trigger { position:absolute; right:12px; top:12px; z-index:10; min-height:44px; padding:8px 14px; border:1px solid var(--line-strong); border-radius:24px; background:var(--ink-800); color:var(--paper); font-size:13px; }
+.atlas-organ-targets { position:absolute; left:0; top:0; overflow:visible; pointer-events:none; }
+.atlas-organ-target { pointer-events:all; fill:transparent; stroke:transparent; cursor:pointer; }
+.atlas-organ-target:hover, .atlas-organ-target:focus-visible, .atlas-organ-target[aria-pressed="true"] { fill:#cbb89322; stroke:var(--bone-bright); stroke-width:2; outline:none; }
+.atlas-explore-copy { font-size:14px; line-height:1.7; color:var(--paper-dim); margin-bottom:16px; }
+.atlas-organ-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+.atlas-explore-item { display:flex; flex-direction:column; align-items:flex-start; gap:5px; min-height:48px; padding:12px; border:1px solid var(--line); border-radius:10px; text-align:left; color:var(--paper); background:var(--ink-850); font-size:14px; overflow-wrap:anywhere; }
+.atlas-explore-item small { color:var(--muted); font-size:12px; }
+.atlas-explore-item:hover { border-color:var(--bone); background:var(--ink-700); }
+.atlas-edge-reason { border-left:2px solid var(--bone); padding:4px 0 4px 14px; font-size:14px; line-height:1.7; color:var(--paper-dim); }
+.atlas-edge-reason h3 { font-weight:600; color:var(--paper); margin-bottom:6px; }
+.atlas-edge-reason small { display:block; margin-top:8px; color:var(--muted); }
+.atlas-connection-list summary { cursor:pointer; padding:12px 0; color:var(--bone-bright); font-size:14px; }
+.react-flow__edge[role="button"] { cursor:pointer; }
+.react-flow__edge[role="button"]:focus-visible .react-flow__edge-path { stroke:var(--bone-bright); stroke-width:3; opacity:1; }
+.atlas-organ-targets { z-index:2; }
+.react-flow__nodes { z-index:3; }
+.atlas-edge-dimmed .react-flow__edge-interaction { pointer-events:none; }
+.react-flow__viewport-portal { pointer-events:none; }

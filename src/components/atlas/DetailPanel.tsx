@@ -3,13 +3,15 @@
 import type { RefObject } from "react";
 import ShareLink from "./ShareLink";
 import AtlasSheet from "./AtlasSheet";
-import type { AtlasData, AtlasNode } from "@/lib/atlas-types";
+import type { AtlasData, AtlasNode, AtlasEdge } from "@/lib/atlas-types";
 import { RELATION_LABELS } from "@/lib/atlas-types";
 import { groupRelated, relatedItemLabel } from "@/lib/related";
 import Disclaimer from "./Disclaimer";
 
 type Props = {
   node: AtlasNode;
+  visibleEdges: AtlasEdge[];
+  onInspectRelation: (id: string) => void;
   panelRef: RefObject<HTMLElement | null>;
   data: AtlasData;
   onClose: () => void;
@@ -18,6 +20,8 @@ type Props = {
 
 export default function DetailPanel({
   node,
+  visibleEdges,
+  onInspectRelation,
   data,
   onClose,
   onSelectRelated,
@@ -72,6 +76,15 @@ export default function DetailPanel({
           </p>
         </Section>
 
+        <details className="atlas-connection-list">
+          <summary>연결선 설명 보기</summary>
+          <ul className="mt-3 space-y-2">
+            {visibleEdges.filter(e => e.source === node.id || e.target === node.id).map(edge => {
+              const other = data.nodes.find(n => n.id === (edge.source === node.id ? edge.target : edge.source));
+              return other && <li key={edge.id}><button className="atlas-explore-item w-full" onClick={() => onInspectRelation(edge.id)}>{node.name} · {other.name} 연결 설명</button></li>;
+            })}
+          </ul>
+        </details>
         {groups.length > 0 && (
           <Section index="04" title="관련 질환 · Related">
             <div className="space-y-4">

@@ -141,6 +141,7 @@ export function deriveEdges(
       note?: string | null;
       sharedSymptoms?: string[];
       relation?: RelationInfo;
+      relationDetails: NonNullable<AtlasEdge["relationDetails"]>;
     }
   >();
 
@@ -155,9 +156,14 @@ export function deriveEdges(
     const existing = merged.get(key);
     if (existing) {
       existing.types.add(type);
-      if (extra?.note) existing.note = extra.note;
+
       if (extra?.sharedSymptoms) existing.sharedSymptoms = extra.sharedSymptoms;
-      if (extra?.relation) existing.relation = higherRelation(existing.relation, extra.relation);
+      if (extra?.relation) {
+        const representative = higherRelation(existing.relation, extra.relation);
+        if (representative === extra.relation) existing.note = extra.note;
+        existing.relation = representative;
+        existing.relationDetails.push({ ...extra.relation, note: extra.note });
+      }
     } else {
       merged.set(key, {
         source: a < b ? a : b,
@@ -166,6 +172,7 @@ export function deriveEdges(
         note: extra?.note,
         sharedSymptoms: extra?.sharedSymptoms,
         relation: extra?.relation,
+        relationDetails: extra?.relation ? [{ ...extra.relation, note: extra.note }] : [],
       });
     }
   };
@@ -203,6 +210,7 @@ export function deriveEdges(
       note: m.note ?? null,
       sharedSymptoms: m.sharedSymptoms,
       relationType: m.relation?.type,
+      relationDetails: m.relationDetails.sort((a,b) => rank(a.type) - rank(b.type)),
       relationFrom: directed ? m.relation!.fromId : undefined,
       relationTo: directed ? m.relation!.toId : undefined,
     });
