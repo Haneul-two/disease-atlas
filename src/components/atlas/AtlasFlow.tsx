@@ -143,7 +143,7 @@ function AtlasInner({ data }: { data: AtlasData }) {
     ? completed
       ? null
       : (stepNode?.id ?? null)
-    : (hoveredId ?? selectedId);
+    : (selectedId ?? hoveredId);
   const effectiveSelectedId = activeTour
     ? completed
       ? null
@@ -424,6 +424,7 @@ function AtlasInner({ data }: { data: AtlasData }) {
     cameraIds,
     `${tour?.slug ?? "browse"}:${stepIndex}:${completed}:${selectedId}:${cameraFocus?.revision ?? 0}:${exploredOrgan}:${exploredEdge?.id}:${view.settings.aligned}`,
     exploration ? 64 : 0,
+    view.settings.layer === "illustration",
   );
   const nextTour = activeTour
     ? availableTours[
@@ -509,9 +510,10 @@ function AtlasInner({ data }: { data: AtlasData }) {
             color="var(--rf-dots)"
           />
           {!activeTour && <Controls showInteractive={false} />}
-          <OrganTargets onSelect={key => openExploration({ kind: "organ", key })}
+          <OrganTargets illustrated={view.settings.layer === "illustration"} onSelect={key => openExploration({ kind: "organ", key })}
             selected={exploredOrgan} enabled={!activeTour} visibleZones={effectiveZones} />
           <Silhouette
+            illustrated={view.settings.layer === "illustration"}
             aligned={view.settings.aligned}
             activeNode={data.nodes.find(n => n.id === activeId)}
             onFocusZone={(zone) => {

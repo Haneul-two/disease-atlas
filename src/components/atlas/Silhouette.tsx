@@ -1,5 +1,6 @@
 "use client";
 import type { CSSProperties } from "react";
+import Image from "next/image";
 import { ViewportPortal, useViewport, useStore } from "@xyflow/react";
 import type { AtlasBodyPart, AtlasNode } from "@/lib/atlas-types";
 import { zoneCenter, zoneExtent, zoneLabelPosition } from "@/lib/atlas-layout";
@@ -8,6 +9,7 @@ import AnatomyDetails from "./AnatomyDetails";
 import { diseaseLandmark } from "@/lib/atlas-anatomy";
 
 type Props = {
+  illustrated?: boolean;
   aligned?: boolean;
   activeNode?: AtlasNode | null;
   bodyParts: AtlasBodyPart[];
@@ -24,6 +26,7 @@ const outline =
 
 
 export default function Silhouette({
+  illustrated = false,
   aligned,
   bodyParts,
   activeNode,
@@ -34,7 +37,7 @@ export default function Silhouette({
   interactive,
 }: Props) {
   const nodePosition = useStore(state => activeNode ? state.nodeLookup.get(activeNode.id)?.position : undefined);
-  const landmark = activeNode ? diseaseLandmark(activeNode.slug) : undefined;
+  const landmark = activeNode ? diseaseLandmark(activeNode.slug, illustrated) : undefined;
   const { zoom } = useViewport();
   const narrow = useStore((state) => state.width < 640);
   const counts = new Map<string, number>();
@@ -58,9 +61,25 @@ export default function Silhouette({
       <div
         className="atlas-anatomy"
         data-active-zone={activeZone ?? "none"}
-        style={{ left: 190, top: 40 }}
+        style={{ left: 190, top: 40, width: 560, height: 1400 }}
       >
+        {illustrated && <svg width="0" height="0" aria-hidden="true" style={{ position: "absolute" }}>
+          <defs>
+            <filter id="atlas-body-composite" colorInterpolationFilters="sRGB">
+              <feColorMatrix type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  4 4 4 0 0" />
+            </filter>
+          </defs>
+        </svg>}
+        {illustrated && <Image
+          className="atlas-detailed-body"
+          src="/anatomy-detailed-v1.png"
+          width={560} height={1400}
+          alt="" aria-hidden="true"
+          priority unoptimized
+          style={{ opacity: activeZone ? 0.55 : 0.7 }}
+        />}
         <svg
+          className={illustrated ? "atlas-schematic-hidden" : undefined}
           width="560"
           height="1400"
           viewBox="0 0 560 1400"

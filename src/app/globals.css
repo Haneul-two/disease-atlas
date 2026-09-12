@@ -658,3 +658,12 @@ a:focus-visible {
   .atlas-view-settings { gap: 6px; padding: 4px 8px; }
   .atlas-view-settings label { gap: 4px; }
 }
+.atlas-detailed-body {
+  display: block; width: 560px; height: 1400px;
+  max-width: none;
+  filter: url(#atlas-body-composite) saturate(.48) contrast(1.08);
+  mix-blend-mode: screen;
+  transition: opacity .3s ease;
+}
+.atlas-anatomy:has(.atlas-detailed-body) { mix-blend-mode: screen; }
+.atlas-schematic-hidden { display: none; }

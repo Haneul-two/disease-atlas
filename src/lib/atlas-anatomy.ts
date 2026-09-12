@@ -76,9 +76,27 @@ export function alignedPositions(diseases: { slug: string; layoutZone: string }[
 export function diseaseLandmarkKey(slug: string) {
   return LANDMARK_BY_SLUG.get(slug);
 }
-export function diseaseLandmark(slug: string) {
+// Calibrated against anatomy-detailed-v1.png in the 560 × 1400 image plate.
+// Coordinates are illustrative organ references, not individual lesion locations.
+const ILLUSTRATED_POINTS: Record<string, Point> = {
+  brain: { x: 470, y: 98 }, heart: { x: 489, y: 379 },
+  lung: { x: 410, y: 351 }, liver: { x: 430, y: 471 },
+  stomach: { x: 511, y: 478 }, pancreas: { x: 479, y: 514 },
+  bowel: { x: 472, y: 591 }, kidney: { x: 398, y: 544 },
+  shoulder: { x: 345, y: 306 }, neck: { x: 470, y: 231 },
+  spine: { x: 470, y: 584 }, wrist: { x: 261, y: 675 },
+  hip: { x: 409, y: 704 }, knee: { x: 402, y: 951 },
+  foot: { x: 381, y: 1332 }, thyroid: { x: 470, y: 262 },
+  adrenal: { x: 539, y: 518 }, pituitary: { x: 470, y: 128 },
+  pelvic: { x: 470, y: 686 },
+};
+export function anatomyLandmark(key: string, illustrated = false) {
+  const landmark = ANATOMY_LANDMARKS[key];
+  return illustrated && ILLUSTRATED_POINTS[key] ? { ...landmark, ...ILLUSTRATED_POINTS[key] } : landmark;
+}
+export function diseaseLandmark(slug: string, illustrated = false) {
   const key = LANDMARK_BY_SLUG.get(slug);
-  return key ? ANATOMY_LANDMARKS[key] : undefined;
+  return key ? anatomyLandmark(key, illustrated) : undefined;
 }
 
 /** Stable by slug, independent of DB name ordering. Reserve label space globally. */

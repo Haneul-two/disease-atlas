@@ -1,10 +1,10 @@
 "use client";
 import { useSyncExternalStore } from "react";
 
-export type BodyLayer = "all" | "organs" | "skeleton";
+export type BodyLayer = "illustration" | "all" | "organs" | "skeleton";
 const key = "disease-atlas:view";
 const event = "atlas-view-change";
-const fallback = '{"layer":"all","aligned":false,"readable":false}';
+const fallback = '{"layer":"illustration","aligned":false,"readable":false}';
 function subscribe(callback: () => void) {
   window.addEventListener("storage", callback);
   window.addEventListener(event, callback);
@@ -23,7 +23,7 @@ export function useViewSettings() {
   let value;
   try { value = JSON.parse(raw); } catch { value = null; }
   const settings = {
-    layer: (["all", "organs", "skeleton"].includes(value?.layer) ? value.layer : "all") as BodyLayer,
+    layer: (["illustration", "all", "organs", "skeleton"].includes(value?.layer) ? value.layer : "illustration") as BodyLayer,
     aligned: value?.aligned === true,
     readable: value?.readable === true,
   };
@@ -39,7 +39,8 @@ export default function ViewSettings({ settings, update }: ReturnType<typeof use
   return <div className="atlas-view-settings" aria-label="지도 화면 설정">
     <label>신체 보기
       <select value={settings.layer} onChange={e => update({ layer: e.target.value as BodyLayer })}>
-        <option value="all">전체</option>
+        <option value="illustration">상세 해부도</option>
+        <option value="all">전체 선화</option>
         <option value="organs">장기 중심</option>
         <option value="skeleton">골격 중심</option>
       </select>

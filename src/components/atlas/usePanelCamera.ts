@@ -10,6 +10,7 @@ export function usePanelCamera(
   targetIds: string[],
   request: string,
   topInset = 0,
+  illustrated = false,
 ) {
   const { getNodes, setViewport } = useReactFlow();
   const ready = useNodesInitialized();
@@ -39,7 +40,7 @@ export function usePanelCamera(
         }
       }
       const reference = nodes.length === 1 && typeof nodes[0].data.slug === "string"
-        ? diseaseLandmark(nodes[0].data.slug) : undefined;
+        ? diseaseLandmark(nodes[0].data.slug, illustrated) : undefined;
       const anchor = reference && !reference.systemic ? reference : undefined;
       const left = Math.min(...nodes.map((n) => n.position.x), ...(anchor ? [anchor.x - 28] : []));
       const top = Math.min(...nodes.map((n) => n.position.y), ...(anchor ? [anchor.y - 36] : []));
@@ -76,5 +77,5 @@ export function usePanelCamera(
       observer.disconnect();
       motion.removeEventListener("change", schedule);
     };
-  }, [canvas, panel, targetKey, request, ready, getNodes, setViewport, topInset]);
+  }, [canvas, panel, targetKey, request, ready, getNodes, setViewport, topInset, illustrated]);
 }
