@@ -51,7 +51,7 @@ export default function DetailPanel({
       )}
       <div className="space-y-6">
         <Section index="01" title="설명 · Definition">
-          <p className="text-[14px] leading-relaxed text-[var(--paper-dim)]">
+          <p className="atlas-body-copy text-[15px] leading-relaxed text-[var(--paper-dim)]">
             {node.description}
           </p>
         </Section>
@@ -71,7 +71,7 @@ export default function DetailPanel({
         </Section>
 
         <Section index="03" title="치료법 · Treatment">
-          <p className="text-[14px] leading-relaxed text-[var(--paper-dim)]">
+          <p className="atlas-body-copy text-[15px] leading-relaxed text-[var(--paper-dim)]">
             {node.treatment}
           </p>
         </Section>
@@ -91,8 +91,7 @@ export default function DetailPanel({
               {groups.map((g) => (
                 <div key={g.type}>
                   <p
-                    className="mb-1 px-2 text-[10px] uppercase tracking-[0.16em] text-[var(--muted)]"
-                    style={{ fontFamily: "var(--f-plex-mono)" }}
+                    className="mb-1 px-2 text-xs font-medium text-[var(--muted)]"
                   >
                     {RELATION_LABELS[g.type]}
                   </p>
@@ -129,7 +128,7 @@ export default function DetailPanel({
                             </span>
                           </span>
                           {note && (
-                            <span className="pl-[18px] text-[11px] leading-relaxed text-[var(--muted)]">
+                            <span className="pl-[18px] text-xs leading-relaxed text-[var(--muted)]">
                               — {note}
                             </span>
                           )}
@@ -159,10 +158,9 @@ function Section({
   return (
     <section>
       <h3
-        className="mb-2.5 flex items-center gap-2 text-[10px] uppercase tracking-[0.18em] text-[var(--muted)]"
-        style={{ fontFamily: "var(--f-plex-mono)" }}
+        className="mb-2.5 flex items-center gap-2 text-xs font-medium tracking-wide text-[var(--muted)]"
       >
-        <span className="text-[var(--bone)]">{index}</span>
+        <span className="font-mono text-[var(--bone)]">{index}</span>
         <span className="h-px flex-1 bg-[var(--line)]" />
         {title}
       </h3>

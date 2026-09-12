@@ -109,7 +109,7 @@ function DiseaseNode({ data }: NodeProps) {
           lineHeight: 1,
           whiteSpace: "nowrap",
           fontFamily: "var(--f-plex-kr)",
-          fontWeight: lit ? 600 : 450,
+          fontWeight: lit ? 600 : 500,
           letterSpacing: "-0.01em",
           color: lit ? "var(--paper)" : "var(--paper-dim)",
           textShadow: d.active

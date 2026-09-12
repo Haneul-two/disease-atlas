@@ -13,7 +13,7 @@ export default async function Home() {
   return (
     <div className="relative z-10 flex h-dvh flex-col">
       <header className="flex items-center justify-between gap-4 border-b border-[var(--line)] bg-[var(--ink-850)]/80 px-5 py-3 backdrop-blur-md">
-        <div className="flex items-center gap-4">
+        <div className="flex shrink-0 items-center gap-4">
           {/* 플레이트 카투쉬 */}
           <div
             className="hidden flex-col items-center justify-center rounded-md border border-[var(--line)] px-3 py-1.5 sm:flex"
@@ -50,7 +50,7 @@ export default async function Home() {
         </div>
 
         <div className="flex items-center gap-4">
-          <Disclaimer className="hidden max-w-xs text-right md:block" />
+          <Disclaimer className="atlas-header-disclaimer" />
           <Link
             href="/admin"
             aria-label="관리자"

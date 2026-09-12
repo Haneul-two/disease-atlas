@@ -41,7 +41,7 @@
   --color-foreground: var(--foreground);
   --font-display: var(--f-fraunces);
   --font-display-ko: var(--f-gowun);
-  --font-sans: var(--f-plex-kr), var(--f-fraunces), sans-serif;
+  --font-sans: var(--f-plex-kr), system-ui, sans-serif;
   --font-mono: var(--f-plex-mono), monospace;
 }
 
@@ -667,3 +667,18 @@ a:focus-visible {
 }
 .atlas-anatomy:has(.atlas-detailed-body) { mix-blend-mode: screen; }
 .atlas-schematic-hidden { display: none; }
+.atlas-header-disclaimer { display: none; }
+@media (min-width: 1024px) {
+  .atlas-header-disclaimer {
+    display: block;
+    white-space: nowrap;
+    flex-shrink: 0;
+    text-align: right;
+  }
+}
+.atlas-sheet-content {
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
+.atlas-body-copy { line-height: 1.8; }
+.atlas-disclaimer { word-break: keep-all; }
