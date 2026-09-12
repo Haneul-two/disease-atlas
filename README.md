@@ -4,7 +4,7 @@
 > 용어·증상·치료법을 검색·열람하는 교육용 웹 아틀라스.
 
 <p align="center">
-  <img src="docs/media/atlas-demo.gif" alt="질병 아틀라스 데모 — 인체 실루엣 위에 부위별로 흩어진 질병 노드 별자리, 노드 클릭 상세 패널, 가이드 투어" width="100%">
+  <img src="docs/media/atlas-demo-latest.gif" alt="질병 아틀라스 최신 데모 — 인체 해부도, 질환 관계 지도, 투어 흐름" width="100%">
 </p>
 
 밤하늘의 별자리처럼, 질병을 **있어야 할 신체 위치에** 배치합니다.
