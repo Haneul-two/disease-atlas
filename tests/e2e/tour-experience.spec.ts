@@ -77,7 +77,7 @@ test("단계 목차, 경로와 완료 요약이 같은 투어를 따른다", asy
   await page.getByRole("button", { name: "다음 단계", exact: true }).click();
   await page.getByRole("button", { name: "투어 마치기", exact: true }).click();
   await expect(page.getByText("하나의 여정을 완주했어요")).toBeVisible();
-  await expect(page.locator("aside ul li")).toHaveCount(3);
+  await expect(page.locator("aside [data-tour-summary] li")).toHaveCount(3);
   await page.getByRole("button", { name: "파킨슨병", exact: true }).click();
   await expect(
     page.getByRole("button", { name: "2단계 파킨슨병", exact: true }),

@@ -1,11 +1,7 @@
 import { SENIOR_TOURS } from "./senior-tours";
-// Disease Atlas — 퀵 투어 정의 (정적 큐레이션)
-// 질병은 DB id 대신 slug로 참조한다(시드 간 안정적). 교육용 해설이며 의학적 조언이 아니다.
 
 export type TourStep = {
-  /** prisma/seed-data.ts 질병 slug */
   diseaseSlug: string;
-  /** 이 스텝에서 보여줄 해설 (2~3문장, 교육용 어조) */
   narrative: string;
 };
 
@@ -22,114 +18,71 @@ export type Tour = {
 export const TOURS: Tour[] = [
   {
     slug: "road-to-dementia",
-    summary: [
-      "혈관 위험인자에서 인지저하까지 이어지는 이야기를 살펴봤어요.",
-      "혈관성치매와 알츠하이머병을 나란히 알아봤어요.",
-      "정상압수두증까지 둘러보며 감별의 의미를 짚었어요.",
-    ],
+    audience: "인지 건강",
     title: "치매로 가는 길",
-    description: "혈관 위험인자에서 인지저하까지 — 치매는 어디서 시작되나",
+    description: "혈관 위험과 서로 다른 인지저하 원인을 비교해 보는 투어",
+    summary: [
+      "이 순서는 개인에게 일어나는 진행 경로가 아니라, 혈관 위험과 인지저하 원인의 관계를 비교하는 지도입니다.",
+      "고혈압·뇌경색·혈관성 인지저하와 알츠하이머병은 서로 영향을 줄 수 있지만, 한 질환이 다음 질환을 뜻하지는 않습니다.",
+      "기억·언어·일상 기능의 변화가 있으면 원인을 구분하는 진료가 중요합니다.",
+    ],
+    sources: [
+      { title: "NIA — 혈관성 치매", url: "https://www.nia.nih.gov/health/vascular-dementia" },
+      { title: "NIA — 알츠하이머병 이해하기", url: "https://www.nia.nih.gov/health/alzheimers-and-dementia/what-alzheimers-disease" },
+      { title: "NINDS — 뇌졸중의 징후와 증상", url: "https://www.ninds.nih.gov/health-information/stroke/signs-and-symptoms" },
+    ],
     steps: [
-      {
-        diseaseSlug: "hypertension",
-        narrative:
-          "이야기는 증상 없는 고혈압에서 시작됩니다. 높은 압력은 수십 년에 걸쳐 뇌의 작은 혈관들을 조용히 손상시킵니다. 그래서 고혈압 관리가 곧 치매 예방의 첫걸음입니다.",
-      },
-      {
-        diseaseSlug: "cerebral-infarction",
-        narrative:
-          "손상된 혈관이 막히면 뇌경색이 됩니다. 큰 발작 없이 지나가는 작은 경색도 있는데, 이런 '조용한 뇌경색'이 반복되며 뇌 손상이 누적됩니다.",
-      },
-      {
-        diseaseSlug: "vascular-dementia",
-        narrative:
-          "누적된 혈관 손상이 인지 기능을 갉아먹으면 혈관성치매입니다. 계단식으로 갑자기 나빠지는 경과가 특징이고, 혈관 위험인자 관리로 진행을 늦출 수 있습니다.",
-      },
-      {
-        diseaseSlug: "alzheimer",
-        narrative:
-          "가장 흔한 치매는 알츠하이머병입니다. 혈관성치매와 함께 오는 '혼합형'도 많아 두 질환은 칼로 자르듯 나뉘지 않습니다. 서서히 진행되는 기억력 저하가 신호입니다.",
-      },
-      {
-        diseaseSlug: "nph",
-        narrative:
-          "마지막은 희망적인 이야기 — 정상압수두증은 보행장애·인지저하·요실금이 함께 오지만, 수술로 호전될 수 있는 '가역성 치매'입니다. 그래서 치매 진단에서 꼭 감별해야 합니다.",
-      },
+      { diseaseSlug: "hypertension", narrative: "고혈압은 증상이 없어도 혈관에 부담을 줄 수 있는 위험 요인입니다. 혈압을 관리한다고 해서 모든 인지저하를 막는 것은 아니지만, 뇌혈관 건강을 지키는 중요한 한 축입니다." },
+      { diseaseSlug: "cerebral-infarction", narrative: "뇌경색은 뇌혈류가 막혀 생기는 응급 질환입니다. 얼굴·팔의 갑작스런 마비나 말 어눌함이 보이면 바로 응급 도움을 받아야 하며, 작은 혈관 손상도 장기적으로 인지 기능에 영향을 줄 수 있습니다." },
+      { diseaseSlug: "vascular-dementia", narrative: "혈관성 인지저하는 뇌혈류를 방해하는 여러 상태와 관련해 기억·사고·행동이 달라지는 질환군입니다. 변화 양상은 사람마다 다르며, 위험 요인을 함께 관리하는 것이 중요합니다." },
+      { diseaseSlug: "alzheimer", narrative: "알츠하이머병은 기억과 사고 기능을 서서히 손상시키는 가장 흔한 치매 원인입니다. 알츠하이머병과 혈관성 변화가 함께 있는 경우도 있어, 이 단계는 앞 단계의 필연적 다음 순서가 아니라 비교 지점입니다." },
+      { diseaseSlug: "nph", narrative: "정상압수두증은 보행 변화·인지 변화·배뇨 증상이 함께 나타날 수 있는 원인 중 하나입니다. 치료 가능성을 평가할 수 있으므로, 증상만으로 단정하지 말고 전문 진료에서 다른 원인과 구분해야 합니다." },
     ],
   },
   {
     slug: "what-is-that-tremor",
-    summary: [
-      "본태성진전과 파킨슨병의 떨림을 비교했어요.",
-      "이차성파킨슨증과 뇌졸중후유증도 함께 살펴봤어요.",
-      "비슷한 증상에서도 원인을 구분하는 이유를 알아봤어요.",
-    ],
+    audience: "운동 증상",
     title: "떨림의 정체",
-    description: "손이 떨린다고 다 파킨슨병이 아니다 — 떨림 질환 감별 여행",
+    description: "손 떨림과 파킨슨증을 구분해 보는 비교 투어",
+    summary: [
+      "떨림은 하나의 질환명이 아니라 여러 원인에서 나타나는 증상입니다.",
+      "언제 떨리는지, 움직임이 느려졌는지, 복용 약과 뇌혈관 병력이 있는지를 함께 살핍니다.",
+      "갑자기 생긴 한쪽 약화·말 어눌함은 떨림 평가보다 응급 평가가 먼저입니다.",
+    ],
+    sources: [
+      { title: "NIA — 파킨슨병", url: "https://www.nia.nih.gov/health/parkinsons-disease/what-parkinsons-disease" },
+      { title: "MedlinePlus — 본태성 떨림", url: "https://medlineplus.gov/essentialtremor.html" },
+      { title: "NINDS — 뇌졸중의 징후와 증상", url: "https://www.ninds.nih.gov/health-information/stroke/signs-and-symptoms" },
+    ],
     steps: [
-      {
-        diseaseSlug: "essential-tremor",
-        narrative:
-          "가장 흔한 떨림은 본태성진전입니다. 물건을 잡거나 글씨를 쓸 때, 즉 움직일 때 떨리는 게 특징입니다. 가족력이 흔하고 경과는 대체로 양성입니다.",
-      },
-      {
-        diseaseSlug: "parkinson",
-        narrative:
-          "반대로 파킨슨병은 가만히 있을 때 떨립니다(안정 시 진전). 떨림보다 중요한 건 동작이 느려지고 몸이 굳는 것 — 도파민 신경세포가 줄어드는 퇴행성 질환입니다.",
-      },
-      {
-        diseaseSlug: "secondary-parkinsonism",
-        narrative:
-          "파킨슨병과 똑같아 보여도 약물이나 뇌혈관 손상 때문에 생기는 이차성파킨슨증이 있습니다. 원인 약을 끊으면 좋아질 수 있어 반드시 감별해야 합니다.",
-      },
-      {
-        diseaseSlug: "stroke-sequelae",
-        narrative:
-          "뇌졸중후유증도 떨림·경직·움직임 장애로 나타날 수 있습니다. 비슷한 증상이라도 원인이 다르면 치료가 완전히 달라진다는 것 — 그게 이 여행의 결론입니다.",
-      },
+      { diseaseSlug: "essential-tremor", narrative: "본태성 떨림은 컵을 들거나 글씨를 쓸 때처럼 동작을 할 때 두드러지는 경우가 많습니다. 양상과 가족력은 단서가 될 수 있지만, 진단은 증상·진찰·다른 원인 배제를 함께 봅니다." },
+      { diseaseSlug: "parkinson", narrative: "파킨슨병에서는 쉬는 동안의 떨림이 나타날 수 있고, 움직임이 느려짐·근육 경직·보행 변화가 동반되기도 합니다. 떨림이 없는 파킨슨병도 있으므로 한 가지 특징만으로 판단할 수 없습니다." },
+      { diseaseSlug: "secondary-parkinsonism", narrative: "일부 약물, 뇌혈관 손상 등은 파킨슨병과 비슷한 느린 움직임과 경직을 만들 수 있습니다. 복용 약은 임의로 중단하지 말고, 진료에서 원인과 조정 가능성을 검토해야 합니다." },
+      { diseaseSlug: "stroke-sequelae", narrative: "뇌졸중 뒤 남은 근력·감각·운동 조절 변화가 손의 떨림이나 불편함처럼 느껴질 수 있습니다. 새로 생긴 갑작스런 한쪽 약화, 얼굴 처짐, 말 어눌함은 즉시 응급 평가가 필요한 신호입니다." },
     ],
   },
   {
     slug: "heart-to-brain",
-    summary: [
-      "고지혈증과 고혈압에서 혈관 이야기를 시작했어요.",
-      "협심증·심근경색·심부전을 차례로 살펴봤어요.",
-      "심장과 뇌를 함께 바라보며 여정을 마무리했어요.",
-    ],
+    audience: "심뇌혈관 건강",
     title: "심장에서 뇌까지",
-    description:
-      "혈관은 하나로 이어져 있다 — 고지혈증에서 뇌졸중까지 한 줄기 이야기",
+    description: "공유하는 심뇌혈관 위험 요인과 응급 신호를 살펴보는 투어",
+    summary: [
+      "이 투어는 한 질환이 반드시 다음 질환으로 이어진다는 경로가 아니라, 함께 관리할 위험 요인을 보여 줍니다.",
+      "고지혈증·고혈압은 심장과 뇌의 혈관 건강에 모두 관련될 수 있습니다.",
+      "새롭거나 심한 가슴 통증, 호흡곤란, 뇌졸중 의심 증상은 지체하지 말고 응급 도움을 받아야 합니다.",
+    ],
+    sources: [
+      { title: "NHLBI — 고혈압", url: "https://www.nhlbi.nih.gov/health/high-blood-pressure" },
+      { title: "NHLBI — 심장마비 증상", url: "https://www.nhlbi.nih.gov/health/heart-attack/symptoms" },
+      { title: "NINDS — 뇌졸중 개요", url: "https://www.ninds.nih.gov/health-information/stroke/stroke-overview" },
+    ],
     steps: [
-      {
-        diseaseSlug: "dyslipidemia",
-        narrative:
-          "출발점은 증상 없는 고지혈증입니다. 혈관 벽에 콜레스테롤이 쌓여 동맥경화가 진행되지만, 아무 느낌이 없어 건강검진에서야 발견되곤 합니다.",
-      },
-      {
-        diseaseSlug: "hypertension",
-        narrative:
-          "고혈압이 더해지면 혈관 손상은 가속됩니다. 고지혈증과 고혈압은 함께 다니며 심장과 뇌, 양쪽 혈관을 동시에 위협하는 단짝입니다.",
-      },
-      {
-        diseaseSlug: "angina",
-        narrative:
-          "심장 혈관이 좁아지면 협심증 — 계단을 오를 때 가슴이 조이고, 쉬면 풀립니다. 혈관이 보내는 마지막 경고장에 가깝습니다.",
-      },
-      {
-        diseaseSlug: "myocardial-infarction",
-        narrative:
-          "경고를 지나치면 혈관이 완전히 막히는 심근경색이 됩니다. 식은땀과 함께 짓누르는 가슴통증이 20분 이상 — 골든타임 안에 막힌 혈관을 뚫어야 합니다.",
-      },
-      {
-        diseaseSlug: "heart-failure",
-        narrative:
-          "심근경색으로 손상된 심장은 펌프 힘이 떨어져 심부전으로 이어질 수 있습니다. 숨이 차고 다리가 붓는 만성 질환으로, 평생 관리가 필요해집니다.",
-      },
-      {
-        diseaseSlug: "stroke",
-        narrative:
-          "그리고 같은 혈관 이야기가 뇌에서 일어나면 뇌졸중입니다. 심장과 뇌는 한 혈관계로 이어져 있어, 위험인자 관리는 둘을 동시에 지키는 일입니다.",
-      },
+      { diseaseSlug: "dyslipidemia", narrative: "이상지질혈증은 혈중 지질 수치가 높거나 불균형한 상태를 말합니다. 증상이 없는 경우가 많아 검사와 개인별 위험도 평가를 통해 관리 계획을 세웁니다." },
+      { diseaseSlug: "hypertension", narrative: "고혈압은 심장과 뇌혈관에 모두 부담을 줄 수 있는 위험 요인입니다. 이상지질혈증과 함께 있을 수 있지만, 각각의 수치와 생활·약물 관리는 개인별로 따로 결정합니다." },
+      { diseaseSlug: "angina", narrative: "협심증은 심장 근육에 가는 혈류가 부족할 때 가슴 불편감이나 압박감으로 나타날 수 있습니다. 증상은 사람마다 다르므로 새롭거나 악화되는 가슴 증상은 ‘경고의 순서’로 해석하지 말고 진료에서 평가해야 합니다." },
+      { diseaseSlug: "myocardial-infarction", narrative: "심근경색은 심장 혈류가 막혀 생기는 응급 질환입니다. 새롭거나 심한 가슴 압박감·통증, 식은땀, 호흡곤란 등이 있으면 기다리지 말고 지역 응급의료체계에 도움을 요청해야 합니다." },
+      { diseaseSlug: "heart-failure", narrative: "심부전은 심장이 필요한 만큼 혈액을 보내기 어려운 상태이며 심근경색 외에도 여러 원인이 있습니다. 숨참·부종·피로 같은 증상은 정도와 원인에 따라 달라져 지속적인 진료와 관리가 필요할 수 있습니다." },
+      { diseaseSlug: "stroke", narrative: "뇌졸중은 심장 질환과 같은 위험 요인을 공유할 수 있지만, 심장 질환의 정해진 다음 단계는 아닙니다. 얼굴 처짐, 한쪽 팔 약화, 말 어눌함이 갑자기 나타나면 즉시 응급 도움을 받아야 합니다." },
     ],
   },
   ...SENIOR_TOURS,
