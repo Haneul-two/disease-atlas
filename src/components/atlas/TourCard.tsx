@@ -136,10 +136,9 @@ export default function TourCard({
             data-tour-summary
             className="space-y-3 text-sm leading-relaxed text-[var(--paper-dim)]"
           >
-            {tour.summary.map((text, i) => (
-              <li key={text} className="flex gap-3">
-                <span className="font-mono text-[var(--bone)]">0{i + 1}</span>
-                <span>{text}</span>
+            {tour.summary.map((text) => (
+              <li key={text}>
+                {text}
               </li>
             ))}
           </ul>
