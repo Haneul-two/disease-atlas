@@ -4,6 +4,7 @@ import { isTypingTarget } from "@/lib/keyboard";
 import type { ResolvedTour } from "@/lib/tour-session";
 import ShareLink from "./ShareLink";
 import AtlasSheet from "./AtlasSheet";
+import TourReview from "./TourReview";
 
 type Props = {
   tour: ResolvedTour;
@@ -163,6 +164,7 @@ export default function TourCard({
               </span>
             </button>
           )}
+          <TourReview key={tour.slug} slug={tour.slug} />
         </div>
       ) : (
         <>

@@ -4,7 +4,7 @@
 export default function AnatomyDetails() {
   return (
     <g fill="none" strokeLinecap="round" strokeLinejoin="round">
-      <g stroke="var(--bone)" strokeWidth="1.5" opacity=".48">
+      <g data-body-layer="skeleton" stroke="var(--bone)" strokeWidth="1.5" opacity=".48">
         {/* Facial marks stay inside the head; ears and neck use separate contours. */}
         <g data-anatomy-part="face">
           <path d="M201 143C190 145 190 170 202 177 M359 143C370 145 370 170 358 177" />
@@ -27,22 +27,22 @@ export default function AnatomyDetails() {
         <path d="M196 1303Q184 1327 166 1333L162 1342L218 1342L221 1310 M364 1303Q376 1327 394 1333L398 1342L342 1342L339 1310 M173 1334L172 1341M183 1331L182 1341M194 1327L193 1341 M387 1334L388 1341M377 1331L378 1341M366 1327L367 1341" />
       </g>
       {/* Vertebral column stays on the torso, not between the thighs. */}
-      <g stroke="var(--bone)" strokeWidth="1.2" opacity=".3">
+      <g data-body-layer="skeleton" stroke="var(--bone)" strokeWidth="1.2" opacity=".3">
         {Array.from({ length: 23 }, (_, i) => {
           const y = 274 + i * 25;
           const w = 7 + i * .24;
           return <path key={y} d={`M${280-w} ${y}Q280 ${y-3} ${280+w} ${y}L${281+w} ${y+13}Q280 ${y+18} ${279-w} ${y+13}Z M${275-w} ${y+7}H${285+w}`} />;
         })}
       </g>
-      <g stroke="#7aa2ff" strokeWidth="1.4" opacity=".48">
+      <g data-body-layer="organs" stroke="#7aa2ff" strokeWidth="1.4" opacity=".48">
         <path d="M242 82Q223 87 234 103Q216 109 226 123Q214 137 227 145Q217 160 236 169 M261 84Q249 98 263 111Q248 124 264 137Q251 151 263 175 M318 82Q337 87 326 103Q344 109 334 123Q346 137 333 145Q343 160 324 169 M299 84Q311 98 297 111Q312 124 296 137Q309 151 297 175 M234 119L245 114 M237 152L247 158 M326 119L315 114 M323 152L313 158 M249 188Q262 177 277 190M283 190Q298 177 311 188 M272 195L276 235M288 195L284 235" />
       </g>
-      <g stroke="#e15b5b" strokeWidth="1.4" opacity=".52">
+      <g data-body-layer="organs" stroke="#e15b5b" strokeWidth="1.4" opacity=".52">
         {/* Bronchi branch into both lungs; lobar fissures and coronary vessels. */}
         <path d="M271 309H289M271 322H289M271 335H289M271 348H289M271 361H289 M233 431L224 396M233 431L206 445M226 454L205 471M219 474L229 503 M327 431L336 396M327 431L354 445M334 454L355 471M341 474L331 503 M194 456Q220 448 250 467 M191 510L250 476M310 483L369 515 M285 455L288 427Q304 412 308 431L307 456 M277 474Q293 480 300 524M287 491L272 503M293 506L315 498" />
         <path d="M175 569Q224 541 270 571 M290 571Q336 541 385 569" />
       </g>
-      <g stroke="#e0a94f" strokeWidth="1.6" opacity=".6">
+      <g data-body-layer="organs" stroke="#e0a94f" strokeWidth="1.6" opacity=".6">
         {/* Liver lobes, gallbladder, stomach folds and pancreas. */}
         <path d="M264 604L253 642 M243 645Q252 658 245 676Q232 678 235 660Z M332 654Q318 658 328 676M337 664Q325 672 334 684 M237 699Q266 685 301 697L327 703Q294 717 261 711L237 710Z" />
         {/* Kidneys, collecting systems, ureters and bladder. */}
@@ -51,7 +51,7 @@ export default function AnatomyDetails() {
         <path d="M215 730L215 808Q215 825 234 825H333Q345 825 346 809L346 735Q345 720 330 720H225 M234 746Q254 733 274 747T318 747Q338 757 313 765L253 770Q227 778 255 786L312 790Q338 800 314 811L252 812" />
         {[746, 765, 784, 803].map(y => <path key={y} d={`M201 ${y}H214M347 ${y}H359`} />)}
       </g>
-      <g stroke="#b07ae0" strokeWidth="1.7" fill="#b07ae0" fillOpacity=".12" opacity=".6">
+      <g data-body-layer="organs" stroke="#b07ae0" strokeWidth="1.7" fill="#b07ae0" fillOpacity=".12" opacity=".6">
         <path d="M276 290Q251 270 254 302Q259 320 276 304H284Q301 320 306 302Q309 270 284 290Z M151 665Q162 650 179 668Z M381 668Q398 650 409 665Z" />
         <circle cx="280" cy="188" r="4" />
       </g>

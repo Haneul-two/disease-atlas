@@ -8,6 +8,7 @@ import AnatomyDetails from "./AnatomyDetails";
 import { diseaseLandmark } from "@/lib/atlas-anatomy";
 
 type Props = {
+  aligned?: boolean;
   activeNode?: AtlasNode | null;
   bodyParts: AtlasBodyPart[];
   nodes: AtlasNode[];
@@ -23,6 +24,7 @@ const outline =
 
 
 export default function Silhouette({
+  aligned,
   bodyParts,
   activeNode,
   nodes,
@@ -99,6 +101,7 @@ export default function Silhouette({
             <path d={outline} />
           </g>
           <g
+            data-body-layer="skeleton"
             stroke="var(--bone)"
             strokeWidth="1.3"
             opacity=".24"
@@ -182,6 +185,7 @@ export default function Silhouette({
           <AnatomyDetails />
         </svg>
       </div>
+      {aligned && <div className="atlas-systemic-caption" style={{ position: "absolute", left: 1180, top: 420 }}>전신·대사 질환</div>}
       {activeNode && landmark && !landmark.systemic && (
         <svg className="atlas-anatomy-guide" aria-hidden="true" style={{ position: "absolute", left: 0, top: 0, width: 1400, height: 1500, overflow: "visible", pointerEvents: "none" }}>
           <path d={`M${(nodePosition ?? activeNode.position).x + 52} ${(nodePosition ?? activeNode.position).y + 9}L${landmark.x} ${landmark.y}`} fill="none" stroke={activeNode.color} strokeWidth="1.5" strokeDasharray="4 6" opacity=".8" />

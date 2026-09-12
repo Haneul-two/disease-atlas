@@ -51,6 +51,28 @@ const GROUPS: Record<string, string[]> = {
   pelvic: ["pcos"],
 };
 const LANDMARK_BY_SLUG = new Map(Object.entries(GROUPS).flatMap(([key, slugs]) => slugs.map(slug => [slug, key] as const)));
+/** Two outer columns leave the entire body plate clear; systemic conditions get a third column. */
+export function alignedPositions(diseases: { slug: string; layoutZone: string }[]): Map<string, Point> {
+  const columns: { slug: string; y: number }[][] = [[], [], []];
+  for (const disease of diseases) {
+    const landmark = diseaseLandmark(disease.slug);
+    const side = landmark?.systemic ? 2 : (landmark?.spread.x ?? 470) < 470 ? 0 : 1;
+    columns[side].push({ slug: disease.slug, y: landmark?.y ?? 600 });
+  }
+  const result = new Map<string, Point>();
+  columns.forEach((items, side) => {
+    items.sort((a, b) => a.y - b.y || a.slug.localeCompare(b.slug));
+    // Wrap dense columns into parallel rails while preserving vertical order.
+    items.forEach((item, index) => {
+      const rail = Math.floor(index / 24);
+      result.set(item.slug, {
+        x: side === 0 ? 85 - rail * 170 : side === 1 ? 760 + rail * 170 : 1190,
+        y: side === 2 ? 470 + index * 64 : 70 + (index % 24) * 56,
+      });
+    });
+  });
+  return result;
+}
 export function diseaseLandmarkKey(slug: string) {
   return LANDMARK_BY_SLUG.get(slug);
 }

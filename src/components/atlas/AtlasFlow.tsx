@@ -21,7 +21,8 @@ import { TOURS } from "@/lib/tours";
 import { learningPath, resolveTour, tourStepIndex } from "@/lib/tour-session";
 import ExplorationPanel, { edgeTitle, type Exploration } from "./ExplorationPanel";
 import OrganTargets from "./OrganTargets";
-import { ANATOMY_LANDMARKS, diseaseLandmarkKey } from "@/lib/atlas-anatomy";
+import { ANATOMY_LANDMARKS, diseaseLandmarkKey, alignedPositions } from "@/lib/atlas-anatomy";
+import ViewSettings, { useViewSettings } from "./ViewSettings";
 import DiseaseNode from "./DiseaseNode";
 import Silhouette from "./Silhouette";
 import Starfield from "./Starfield";
@@ -38,6 +39,8 @@ import { usePanelCamera } from "./usePanelCamera";
 const nodeTypes = { disease: DiseaseNode };
 
 function AtlasInner({ data }: { data: AtlasData }) {
+  const view = useViewSettings();
+  const labelPositions = useMemo(() => alignedPositions(data.nodes), [data.nodes]);
   const [visibleZones, setVisibleZones] = useState(
     () => new Set(data.bodyParts.map((b) => b.layoutZone)),
   );
@@ -70,6 +73,21 @@ function AtlasInner({ data }: { data: AtlasData }) {
     [data.nodes],
   );
   const { route, navigate } = useAtlasNavigation(data.nodes, availableTours);
+  const previousView = useRef(`${view.settings.aligned}:${view.settings.readable}`);
+  useEffect(() => {
+    const key = `${view.settings.aligned}:${view.settings.readable}`;
+    const changed = previousView.current !== key;
+    previousView.current = key;
+    if (route.kind !== "browse") return;
+    let frame = 0;
+    const refit = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => { void fitView({ padding: 0.2, duration: 0 }); });
+    };
+    if (changed) refit();
+    window.addEventListener("resize", refit);
+    return () => { cancelAnimationFrame(frame); window.removeEventListener("resize", refit); };
+  }, [view.settings.aligned, view.settings.readable, fitView, route.kind]);
   const { progress, save, clear, storageFailed } =
     useTourProgress(availableTours);
   const tour = route.kind === "tour" ? route : null;
@@ -231,6 +249,7 @@ function AtlasInner({ data }: { data: AtlasData }) {
     () =>
       nodes.map((n) => ({
         ...n,
+        position: view.settings.aligned ? labelPositions.get(String(n.data.slug)) ?? n.position : n.position,
         hidden: !visibleNodeIds.has(n.id),
         data: {
           ...n.data,
@@ -255,6 +274,8 @@ function AtlasInner({ data }: { data: AtlasData }) {
       representatives,
       exploredOrgan,
       exploredEdge,
+      view.settings.aligned,
+      labelPositions,
     ],
   );
   const renderEdges: Edge[] = useMemo(() => {
@@ -401,7 +422,7 @@ function AtlasInner({ data }: { data: AtlasData }) {
     canvasRef,
     panelRef,
     cameraIds,
-    `${tour?.slug ?? "browse"}:${stepIndex}:${completed}:${selectedId}:${cameraFocus?.revision ?? 0}:${exploredOrgan}:${exploredEdge?.id}`,
+    `${tour?.slug ?? "browse"}:${stepIndex}:${completed}:${selectedId}:${cameraFocus?.revision ?? 0}:${exploredOrgan}:${exploredEdge?.id}:${view.settings.aligned}`,
     exploration ? 64 : 0,
   );
   const nextTour = activeTour
@@ -411,7 +432,8 @@ function AtlasInner({ data }: { data: AtlasData }) {
     : null;
 
   return (
-    <div className="flex h-full min-h-0 flex-col">
+    <div className="atlas-experience flex h-full min-h-0 flex-col" data-readable={view.settings.readable} data-body-layer={view.settings.layer} data-aligned={view.settings.aligned}>
+      <ViewSettings {...view} />
       {activeTour ? (
         <div className="atlas-tour-bar">
           <span className="flex items-center gap-2">
@@ -471,7 +493,7 @@ function AtlasInner({ data }: { data: AtlasData }) {
           onPaneClick={() => {
             if (!activeTour) { closeExploration(); closeDetail(); }
           }}
-          nodesDraggable={!activeTour}
+          nodesDraggable={!activeTour && !view.settings.aligned}
           nodesFocusable={!activeTour}
           nodesConnectable={false}
           fitView
@@ -490,6 +512,7 @@ function AtlasInner({ data }: { data: AtlasData }) {
           <OrganTargets onSelect={key => openExploration({ kind: "organ", key })}
             selected={exploredOrgan} enabled={!activeTour} visibleZones={effectiveZones} />
           <Silhouette
+            aligned={view.settings.aligned}
             activeNode={data.nodes.find(n => n.id === activeId)}
             onFocusZone={(zone) => {
               setExploration(null);
