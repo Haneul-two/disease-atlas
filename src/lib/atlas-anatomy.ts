@@ -100,12 +100,15 @@ export function diseaseLandmark(slug: string, illustrated = false) {
 }
 
 /** Stable by slug, independent of DB name ordering. Reserve label space globally. */
-export function anatomicalPositions(diseases: { slug: string; layoutZone: string }[]): Map<string, Point> {
+export function anatomicalPositions(diseases: { slug: string; layoutZone: string }[], illustrated = false): Map<string, Point> {
   const result = new Map<string, Point>();
   const occupied: Point[] = [];
   for (const disease of [...diseases].sort((a, b) => a.slug.localeCompare(b.slug))) {
-    const landmark = diseaseLandmark(disease.slug);
-    const center = landmark?.spread ?? zonePositions(disease.layoutZone, 1)[0];
+    const landmark = diseaseLandmark(disease.slug, illustrated);
+    const key = diseaseLandmarkKey(disease.slug);
+    const center = landmark
+      ? { x: landmark.spread.x, y: key === "spine" ? landmark.y : landmark.spread.y + landmark.y - ANATOMY_LANDMARKS[key!].y }
+      : zonePositions(disease.layoutZone, 1)[0];
     const candidates: (Point & { cost: number })[] = [];
     for (let row = -12; row <= 12; row++) {
       for (let col = -8; col <= 8; col++) {

@@ -208,6 +208,7 @@ export default function Silhouette({
       {activeNode && landmark && !landmark.systemic && (
         <svg className="atlas-anatomy-guide" aria-hidden="true" style={{ position: "absolute", left: 0, top: 0, width: 1400, height: 1500, overflow: "visible", pointerEvents: "none" }}>
           <path d={`M${(nodePosition ?? activeNode.position).x + 52} ${(nodePosition ?? activeNode.position).y + 9}L${landmark.x} ${landmark.y}`} fill="none" stroke={activeNode.color} strokeWidth="1.5" strokeDasharray="4 6" opacity=".8" />
+          <circle key={activeNode.id} className="atlas-organ-wave" cx={landmark.x} cy={landmark.y} r="24" fill="none" stroke={activeNode.color} strokeWidth="2" />
           <circle cx={landmark.x} cy={landmark.y} r="12" fill={activeNode.color} fillOpacity=".12" stroke={activeNode.color} />
           <text x={landmark.x + 18} y={landmark.y - 15} fill="var(--paper)" fontSize="14" stroke="var(--ink-950)" strokeWidth="4" paintOrder="stroke">{landmark.label}</text>
         </svg>

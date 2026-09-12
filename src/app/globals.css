@@ -109,6 +109,72 @@ body::before {
 /* ── 모션 ───────────────────────────────────────── */
 
 /* 노드 등장 — 별이 켜지듯 (fill은 반드시 backwards로 쓸 것) */
+@media (max-width: 639px) {
+  .atlas-experience .atlas-node[data-active="true"][data-tour-step] .atlas-disease-label {
+    font-size: 20px !important;
+    line-height: 1.25 !important;
+    white-space: normal !important;
+    text-align: center;
+    overflow-wrap: anywhere;
+    text-wrap: balance;
+  }
+}
+.atlas-star { position: relative; }
+.atlas-sheet-current { display: none; }
+@media (max-width: 639px) {
+  .atlas-sheet[data-expanded="true"] { max-height: 58%; }
+  .atlas-sheet[data-expanded="false"] .atlas-sheet-current { display: block; margin-top: 6px; color: var(--bone-bright); font-size: 16px; }
+  .atlas-path-inactive { opacity: 0; pointer-events: none; }
+  .atlas-path-current { opacity: .45; }
+}
+.atlas-node[data-active="true"][data-tour-step] .atlas-star::after {
+  content: "";
+  position: absolute;
+  inset: -7px;
+  border: 1px solid var(--bone-bright);
+  border-radius: 50%;
+  animation: atlas-focus-wave 850ms ease-out both;
+  pointer-events: none;
+}
+@keyframes atlas-focus-wave {
+  from { transform: scale(.7); opacity: 0; }
+  35% { opacity: .8; }
+  to { transform: scale(1.4); opacity: .35; }
+}
+.atlas-organ-wave {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: atlas-organ-wave 950ms ease-out both;
+}
+@keyframes atlas-organ-wave {
+  from { transform: scale(.5); opacity: .8; }
+  to { transform: scale(2.4); opacity: 0; }
+}
+.atlas-edge-flow .react-flow__edge-path,
+.react-flow__edge.animated .react-flow__edge-path {
+  animation: atlas-edge-flow 900ms linear 2 !important;
+}
+@keyframes atlas-edge-flow { to { stroke-dashoffset: -26; } }
+.atlas-node[data-tour-completed="true"] .atlas-star::after {
+  content: "";
+  position: absolute;
+  inset: -5px;
+  border: 1px solid var(--bone-bright);
+  border-radius: 50%;
+  animation: atlas-focus-wave 650ms ease-out both;
+}
+.atlas-tour-progress { height: 3px; margin-bottom: 18px; background: var(--line); overflow: hidden; border-radius: 3px; }
+.atlas-tour-progress > span { display: block; height: 100%; background: var(--bone-bright); transform-origin: left; transition: transform 280ms ease-out; }
+.atlas-step-content { animation: atlas-step-enter 220ms ease-out both; }
+@keyframes atlas-step-enter { from { opacity: .3; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+.atlas-organ-target[aria-pressed="true"] { animation: atlas-organ-select 650ms ease-out; }
+@keyframes atlas-organ-select { from { fill-opacity: .5; stroke-width: 3; } }
+@media (prefers-reduced-motion: reduce) {
+  .atlas-edge-flow .react-flow__edge-path,
+  .react-flow__edge.animated .react-flow__edge-path { animation: none !important; }
+  .atlas-organ-wave { opacity: 0; }
+}
+
 @keyframes star-in {
   from {
     opacity: 0;

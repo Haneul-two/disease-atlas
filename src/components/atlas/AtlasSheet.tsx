@@ -19,6 +19,7 @@ export default function AtlasSheet({
   panelRef,
   side = "left",
   defaultExpanded = true,
+  compactLabel,
 }: {
   title: string;
   eyebrow: string;
@@ -29,6 +30,7 @@ export default function AtlasSheet({
   panelRef: RefObject<HTMLElement | null>;
   side?: "left" | "right";
   defaultExpanded?: boolean;
+  compactLabel?: string;
 }) {
   const [expanded, setExpanded] = useState(defaultExpanded);
   const id = useId();
@@ -61,6 +63,7 @@ export default function AtlasSheet({
           >
             {title}
           </h2>
+          {compactLabel && <p className="atlas-sheet-current">{compactLabel}</p>}
         </div>
         <button
           type="button"

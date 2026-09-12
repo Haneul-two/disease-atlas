@@ -4,6 +4,22 @@ import { anatomicalPositions, alignedPositions, diseaseLandmark } from "../src/l
 import { diseases, bodyParts } from "../prisma/seed-data";
 const input = diseases.map(d => ({ slug: d.slug, layoutZone: bodyParts.find(b => b.slug === d.bodyPart)!.layoutZone }));
 
+test("해부도별 척추 질환은 무릎보다 허리 기준점에 가깝게 배치한다", () => {
+  for (const illustrated of [false, true]) {
+    const positions = anatomicalPositions(input, illustrated);
+    const spine = diseaseLandmark("spinal-stenosis", illustrated)!;
+    const knee = diseaseLandmark("osteoarthritis", illustrated)!;
+    for (const slug of ["spinal-stenosis", "herniated-disc", "vertebral-compression-fracture"]) {
+      const y = positions.get(slug)!.y + 9;
+      assert.ok(Math.abs(y - spine.y) < Math.abs(y - knee.y), slug);
+    }
+    const points = [...positions.values()];
+    for (let i = 0; i < points.length; i++) for (let j = i + 1; j < points.length; j++) {
+      assert.ok(Math.abs(points[i].x - points[j].x) >= 112 || Math.abs(points[i].y - points[j].y) >= 48);
+    }
+  }
+});
+
 test("정렬 배치는 신체 바깥에 놓이며 전신 질환을 분리하고 이름 공간을 확보한다", () => {
   const positions = alignedPositions(input);
   assert.deepEqual(positions, alignedPositions([...input].reverse()));

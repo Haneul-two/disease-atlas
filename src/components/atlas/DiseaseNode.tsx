@@ -14,6 +14,8 @@ export type DiseaseNodeData = {
   weight?: number;
   appearDelay?: number;
   tourStep?: number;
+  tourMuted?: boolean;
+  tourCompleted?: boolean;
   overview?: boolean;
   representative?: boolean;
 };
@@ -59,7 +61,7 @@ function DiseaseNode({ data }: NodeProps) {
         width: 104,
         animation: "star-in 0.7s cubic-bezier(0.22, 1, 0.36, 1) backwards",
         animationDelay: `${d.appearDelay ?? 0}ms`,
-        opacity: d.dimmed ? 0.1 : 1,
+        opacity: d.dimmed ? 0.1 : d.tourMuted ? 0.35 : 1,
         transition: "opacity 0.3s ease",
         cursor: "pointer",
       }}
@@ -68,6 +70,7 @@ function DiseaseNode({ data }: NodeProps) {
       data-selected={!!d.selected}
       data-active={!!d.active}
       data-tour-step={d.tourStep || undefined}
+      data-tour-completed={!!d.tourCompleted}
       title={`${d.label} · ${d.bodyPartName}`}
     >
       <Handle type="target" position={Position.Top} style={handleStyle} />

@@ -75,6 +75,7 @@ export default function TourCard({
       key={`${tour.slug}:${completed}`}
       panelRef={panelRef}
       title={tour.title}
+      compactLabel={completed ? undefined : step.node.name}
       eyebrow={
         completed
           ? "여정 완료"
@@ -182,7 +183,11 @@ export default function TourCard({
               </button>
             ))}
           </nav>
+          <div className="atlas-tour-progress" role="progressbar" aria-label="투어 진행률" aria-valuemin={0} aria-valuemax={tour.steps.length} aria-valuenow={stepIndex + 1}>
+            <span style={{ transform: `scaleX(${(stepIndex + 1) / tour.steps.length})` }} />
+          </div>
           <div aria-live="polite" aria-atomic="true">
+            <div key={stepIndex} className="atlas-step-content">
             <p className="atlas-eyebrow mb-2">
               {step.node.bodyPartName} · {stepIndex + 1}번째 만남
             </p>
@@ -200,6 +205,7 @@ export default function TourCard({
             <p className="text-[15px] leading-[1.8] text-[var(--paper-dim)]">
               {step.narrative}
             </p>
+            </div>
           </div>
           {!isLast && (
             <div className="mt-5 border-t border-[var(--line)] pt-3">

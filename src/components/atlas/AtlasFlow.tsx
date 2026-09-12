@@ -21,7 +21,7 @@ import { TOURS } from "@/lib/tours";
 import { learningPath, resolveTour, tourStepIndex } from "@/lib/tour-session";
 import ExplorationPanel, { edgeTitle, type Exploration } from "./ExplorationPanel";
 import OrganTargets from "./OrganTargets";
-import { ANATOMY_LANDMARKS, diseaseLandmarkKey, alignedPositions } from "@/lib/atlas-anatomy";
+import { ANATOMY_LANDMARKS, diseaseLandmarkKey, alignedPositions, anatomicalPositions } from "@/lib/atlas-anatomy";
 import ViewSettings, { useViewSettings } from "./ViewSettings";
 import DiseaseNode from "./DiseaseNode";
 import Silhouette from "./Silhouette";
@@ -40,6 +40,7 @@ const nodeTypes = { disease: DiseaseNode };
 
 function AtlasInner({ data }: { data: AtlasData }) {
   const view = useViewSettings();
+  const bodyPositions = useMemo(() => anatomicalPositions(data.nodes, view.settings.layer === "illustration"), [data.nodes, view.settings.layer]);
   const labelPositions = useMemo(() => alignedPositions(data.nodes), [data.nodes]);
   const [visibleZones, setVisibleZones] = useState(
     () => new Set(data.bodyParts.map((b) => b.layoutZone)),
@@ -249,11 +250,13 @@ function AtlasInner({ data }: { data: AtlasData }) {
     () =>
       nodes.map((n) => ({
         ...n,
-        position: view.settings.aligned ? labelPositions.get(String(n.data.slug)) ?? n.position : n.position,
+        position: view.settings.aligned && !activeTour ? labelPositions.get(String(n.data.slug)) ?? n.position : bodyPositions.get(String(n.data.slug)) ?? n.position,
         hidden: !visibleNodeIds.has(n.id),
         data: {
           ...n.data,
           active: n.id === activeId,
+          tourMuted: !!activeTour && !completed && n.id !== activeId,
+          tourCompleted: completed && tourNodeIds.has(n.id),
           overview: overview && !exploredOrgan && !exploredEdge,
           representative: representatives.has(n.id),
           selected: n.id === effectiveSelectedId,
@@ -271,11 +274,14 @@ function AtlasInner({ data }: { data: AtlasData }) {
       neighborIds,
       activeTour,
       overview,
+      completed,
+      tourNodeIds,
       representatives,
       exploredOrgan,
       exploredEdge,
       view.settings.aligned,
       labelPositions,
+      bodyPositions,
     ],
   );
   const renderEdges: Edge[] = useMemo(() => {
@@ -287,13 +293,13 @@ function AtlasInner({ data }: { data: AtlasData }) {
         type: "straight",
         selectable: false,
         focusable: false,
-        className: "atlas-learning-path",
+        className: completed ? "atlas-learning-path atlas-path-complete" : e.current ? "atlas-learning-path atlas-edge-flow atlas-path-current" : "atlas-learning-path atlas-path-inactive",
         // Learning order is deliberately marker-free, distinct from medical arrows.
         style: {
           stroke: e.current ? "var(--bone-bright)" : "var(--bone)",
           strokeWidth: e.current ? 2.5 : 1.5,
           strokeDasharray: "6 7",
-          opacity: e.current || e.visited ? 0.95 : 0.35,
+          opacity: completed ? 0.7 : e.current ? 0.55 : e.visited ? 0.12 : 0.06,
         },
       }));
     return activeEdges.map((e) => {
@@ -425,6 +431,7 @@ function AtlasInner({ data }: { data: AtlasData }) {
     `${tour?.slug ?? "browse"}:${stepIndex}:${completed}:${selectedId}:${cameraFocus?.revision ?? 0}:${exploredOrgan}:${exploredEdge?.id}:${view.settings.aligned}`,
     exploration ? 64 : 0,
     view.settings.layer === "illustration",
+    activeTour && !completed ? stepNode?.id : undefined,
   );
   const nextTour = activeTour
     ? availableTours[

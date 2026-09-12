@@ -1,4 +1,5 @@
 "use client";
+import { useEffect, useRef } from "react";
 // 배경 분위기 레이어 — 별먼지 + 오로라 색 웅덩이 + 비네트.
 // 그래프(팬/줌) 뒤에 고정되어 깊이감을 만든다. 포인터 이벤트 없음.
 
@@ -56,8 +57,43 @@ const AURORAS = [
 ] as const;
 
 export default function Starfield({ focused = false }: { focused?: boolean }) {
+  const layer = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const element = layer.current;
+    const surface = element?.parentElement;
+    if (!element || !surface) return;
+    const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const pointer = window.matchMedia("(pointer: fine)");
+    let frame = 0;
+    const reset = () => {
+      cancelAnimationFrame(frame);
+      element.style.transform = "translate3d(0, 0, 0)";
+    };
+    const move = (event: PointerEvent) => {
+      if (motion.matches || !pointer.matches || focused || event.buttons) return;
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        const rect = surface.getBoundingClientRect();
+        const x = ((event.clientX - rect.left) / rect.width - 0.5) * 6;
+        const y = ((event.clientY - rect.top) / rect.height - 0.5) * 6;
+        element.style.transform = `translate3d(${x}px, ${y}px, 0)`;
+      });
+    };
+    surface.addEventListener("pointermove", move, { passive: true });
+    surface.addEventListener("pointerleave", reset);
+    motion.addEventListener("change", reset);
+    pointer.addEventListener("change", reset);
+    return () => {
+      reset();
+      surface.removeEventListener("pointermove", move);
+      surface.removeEventListener("pointerleave", reset);
+      motion.removeEventListener("change", reset);
+      pointer.removeEventListener("change", reset);
+    };
+  }, [focused]);
   return (
     <div
+      ref={layer}
       className="atlas-starfield pointer-events-none absolute inset-0 overflow-hidden"
       data-focused={focused}
       aria-hidden

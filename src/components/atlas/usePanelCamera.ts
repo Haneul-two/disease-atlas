@@ -11,6 +11,7 @@ export function usePanelCamera(
   request: string,
   topInset = 0,
   illustrated = false,
+  mobileTargetId?: string,
 ) {
   const { getNodes, setViewport } = useReactFlow();
   const ready = useNodesInitialized();
@@ -24,13 +25,14 @@ export function usePanelCamera(
     let frame = 0;
     let first = true;
     const position = () => {
-      const nodes = getNodes().filter((n) => ids.has(n.id));
+      const mobile = window.matchMedia("(max-width: 639px)").matches;
+      const nodes = getNodes().filter((n) => mobile && mobileTargetId ? n.id === mobileTargetId : ids.has(n.id));
       if (!nodes.length) return;
       const box = host.getBoundingClientRect();
       const overlay = panel.current?.getBoundingClientRect();
       const area = { x: 0, y: topInset, width: box.width, height: box.height - topInset };
       if (overlay) {
-        if (window.matchMedia("(max-width: 639px)").matches) {
+        if (mobile) {
           area.height = Math.max(60, overlay.top - box.top - 12 - topInset);
         } else if (overlay.left - box.left < box.width / 2) {
           area.x = overlay.right - box.left + 16;
@@ -41,6 +43,7 @@ export function usePanelCamera(
       }
       const reference = nodes.length === 1 && typeof nodes[0].data.slug === "string"
         ? diseaseLandmark(nodes[0].data.slug, illustrated) : undefined;
+      // Keep the current disease and its anatomical reference together.
       const anchor = reference && !reference.systemic ? reference : undefined;
       const left = Math.min(...nodes.map((n) => n.position.x), ...(anchor ? [anchor.x - 28] : []));
       const top = Math.min(...nodes.map((n) => n.position.y), ...(anchor ? [anchor.y - 36] : []));
@@ -77,5 +80,5 @@ export function usePanelCamera(
       observer.disconnect();
       motion.removeEventListener("change", schedule);
     };
-  }, [canvas, panel, targetKey, request, ready, getNodes, setViewport, topInset, illustrated]);
+  }, [canvas, panel, targetKey, request, ready, getNodes, setViewport, topInset, illustrated, mobileTargetId]);
 }
