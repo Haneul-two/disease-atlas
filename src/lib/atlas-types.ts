@@ -43,6 +43,7 @@ export type AtlasEdge = {
   sharedSymptoms?: string[];
   /** 수동 관계일 때의 대표 관계 타입 (v1.2) */
   relationType?: RelationType;
+  relationDetails?: { type: RelationType; fromId: string; toId: string; note?: string | null }[];
   /** 방향 있는 관계의 시작 노드 id — 무방향이면 undefined */
   relationFrom?: string;
   /** 방향 있는 관계의 끝 노드 id — 무방향이면 undefined */

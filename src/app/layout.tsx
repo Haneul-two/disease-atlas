@@ -20,7 +20,7 @@ const gowunBatang = Gowun_Batang({
 
 // 본문/UI — 한글+라틴 (기술적·과학적 산세리프)
 const plexSansKr = IBM_Plex_Sans_KR({
-  weight: ["300", "400", "500", "600"],
+  weight: ["300", "400", "500", "600", "700"],
   subsets: ["latin"],
   variable: "--f-plex-kr",
   display: "swap",

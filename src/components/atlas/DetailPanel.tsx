@@ -1,81 +1,57 @@
 "use client";
 // 우측 인스펙션 카드 — 표본 카탈로그 항목처럼 질병을 펼쳐 보인다.
-import type { AtlasData, AtlasNode } from "@/lib/atlas-types";
+import type { RefObject } from "react";
+import ShareLink from "./ShareLink";
+import AtlasSheet from "./AtlasSheet";
+import type { AtlasData, AtlasNode, AtlasEdge } from "@/lib/atlas-types";
 import { RELATION_LABELS } from "@/lib/atlas-types";
 import { groupRelated, relatedItemLabel } from "@/lib/related";
 import Disclaimer from "./Disclaimer";
 
 type Props = {
-  node: AtlasNode | null;
+  node: AtlasNode;
+  visibleEdges: AtlasEdge[];
+  onInspectRelation: (id: string) => void;
+  panelRef: RefObject<HTMLElement | null>;
   data: AtlasData;
   onClose: () => void;
   onSelectRelated: (nodeId: string) => void;
 };
 
-export default function DetailPanel({ node, data, onClose, onSelectRelated }: Props) {
+export default function DetailPanel({
+  node,
+  visibleEdges,
+  onInspectRelation,
+  data,
+  onClose,
+  onSelectRelated,
+  panelRef,
+}: Props) {
   if (!node) return null;
 
   const groups = groupRelated(node, data);
 
-  const c = node.color;
-
   return (
-    <aside
-      key={node.id}
-      className="absolute right-0 top-0 z-20 flex h-full w-[min(390px,92vw)] flex-col border-l border-[var(--line)] bg-[var(--ink-800)]/95 shadow-[0_0_60px_rgba(0,0,0,0.6)] backdrop-blur-md"
-      style={{ animation: "panel-in 0.34s cubic-bezier(0.22, 1, 0.36, 1) both" }}
+    <AtlasSheet
+      panelRef={panelRef}
+      side="right"
+      title={node.name}
+      eyebrow={[node.bodyPartName, node.categoryName]
+        .filter(Boolean)
+        .join(" · ")}
+      onClose={onClose}
+      closeLabel="닫기"
+      footer={<Disclaimer />}
     >
-      {/* 부위색 상단 인레이 */}
-      <span
-        className="absolute left-0 top-0 h-full w-px"
-        style={{ background: `linear-gradient(to bottom, ${c}, transparent 60%)` }}
-      />
-
-      {/* 헤더 */}
-      <div className="relative px-5 pt-5 pb-4">
-        <button
-          onClick={onClose}
-          aria-label="닫기"
-          className="absolute right-4 top-4 rounded-md p-1 text-[var(--muted)] transition-colors hover:bg-[var(--ink-700)] hover:text-[var(--bone-bright)]"
-        >
-          ✕
-        </button>
-
-        {/* 에이브로우 — 표본 메타 */}
-        <div
-          className="mb-2.5 flex items-center gap-2 text-[10px] uppercase tracking-[0.2em]"
-          style={{ fontFamily: "var(--f-plex-mono)", color: "var(--muted)" }}
-        >
-          <span style={{ color: c }}>● {node.bodyPartName}</span>
-          {node.categoryName && (
-            <>
-              <span className="text-[var(--line-strong)]">/</span>
-              <span>{node.categoryName}</span>
-            </>
-          )}
-        </div>
-
-        <h2
-          className="text-[27px] leading-tight text-[var(--paper)]"
-          style={{ fontFamily: "var(--f-gowun)", fontWeight: 700 }}
-        >
-          {node.name}
-        </h2>
-        {node.medicalTerm && (
-          <p
-            className="mt-1.5 text-[12px] italic leading-snug text-[var(--muted)]"
-            style={{ fontFamily: "var(--f-plex-mono)" }}
-          >
-            {node.medicalTerm}
-          </p>
-        )}
-        <span className="mt-3 block h-px w-full bg-[var(--line)]" />
-      </div>
-
-      {/* 본문 */}
-      <div className="flex-1 space-y-6 overflow-y-auto px-5 pb-6">
+      <ShareLink route={{ kind: "disease", slug: node.slug }} />
+      {node.medicalTerm && (
+        <p className="mb-4 font-mono text-xs italic text-[var(--muted)]">
+          {node.medicalTerm}
+        </p>
+      )}
+      <div className="space-y-6">
         <Section index="01" title="설명 · Definition">
-          <p className="text-[14px] leading-relaxed text-[var(--paper-dim)]">
+          <p className="atlas-body-copy text-[15px] leading-relaxed text-[var(--paper-dim)]">
             {node.description}
           </p>
         </Section>
@@ -95,19 +71,27 @@ export default function DetailPanel({ node, data, onClose, onSelectRelated }: Pr
         </Section>
 
         <Section index="03" title="치료법 · Treatment">
-          <p className="text-[14px] leading-relaxed text-[var(--paper-dim)]">
+          <p className="atlas-body-copy text-[15px] leading-relaxed text-[var(--paper-dim)]">
             {node.treatment}
           </p>
         </Section>
 
+        <details className="atlas-connection-list">
+          <summary>연결선 설명 보기</summary>
+          <ul className="mt-3 space-y-2">
+            {visibleEdges.filter(e => e.source === node.id || e.target === node.id).map(edge => {
+              const other = data.nodes.find(n => n.id === (edge.source === node.id ? edge.target : edge.source));
+              return other && <li key={edge.id}><button className="atlas-explore-item w-full" onClick={() => onInspectRelation(edge.id)}>{node.name} · {other.name} 연결 설명</button></li>;
+            })}
+          </ul>
+        </details>
         {groups.length > 0 && (
           <Section index="04" title="관련 질환 · Related">
             <div className="space-y-4">
               {groups.map((g) => (
                 <div key={g.type}>
                   <p
-                    className="mb-1 px-2 text-[10px] uppercase tracking-[0.16em] text-[var(--muted)]"
-                    style={{ fontFamily: "var(--f-plex-mono)" }}
+                    className="mb-1 px-2 text-xs font-medium text-[var(--muted)]"
                   >
                     {RELATION_LABELS[g.type]}
                   </p>
@@ -116,16 +100,26 @@ export default function DetailPanel({ node, data, onClose, onSelectRelated }: Pr
                       <li key={`${g.type}-${r.id}`}>
                         <button
                           onClick={() => onSelectRelated(r.id)}
-                          aria-label={relatedItemLabel(node.name, { node: r, note, direction }, RELATION_LABELS[g.type])}
+                          aria-label={relatedItemLabel(
+                            node.name,
+                            { node: r, note, direction },
+                            RELATION_LABELS[g.type],
+                          )}
                           className="group flex w-full flex-col gap-1 rounded-md px-2 py-2 text-left transition-colors hover:bg-[var(--ink-700)]"
                         >
                           <span className="flex w-full items-center gap-2.5">
                             <span
                               className="h-2 w-2 shrink-0 rounded-full"
-                              style={{ background: r.color, boxShadow: `0 0 6px ${r.color}aa` }}
+                              style={{
+                                background: r.color,
+                                boxShadow: `0 0 6px ${r.color}aa`,
+                              }}
                             />
                             {direction && (
-                              <span aria-hidden="true" className="shrink-0 text-[11px] text-[var(--muted)]">
+                              <span
+                                aria-hidden="true"
+                                className="shrink-0 text-[11px] text-[var(--muted)]"
+                              >
                                 {direction === "out" ? "→" : "←"}
                               </span>
                             )}
@@ -134,7 +128,7 @@ export default function DetailPanel({ node, data, onClose, onSelectRelated }: Pr
                             </span>
                           </span>
                           {note && (
-                            <span className="pl-[18px] text-[11px] leading-relaxed text-[var(--muted)]">
+                            <span className="pl-[18px] text-xs leading-relaxed text-[var(--muted)]">
                               — {note}
                             </span>
                           )}
@@ -148,12 +142,7 @@ export default function DetailPanel({ node, data, onClose, onSelectRelated }: Pr
           </Section>
         )}
       </div>
-
-      {/* 고지 */}
-      <div className="border-t border-[var(--line)] bg-[var(--ink-850)] px-5 py-3.5">
-        <Disclaimer />
-      </div>
-    </aside>
+    </AtlasSheet>
   );
 }
 
@@ -169,10 +158,9 @@ function Section({
   return (
     <section>
       <h3
-        className="mb-2.5 flex items-center gap-2 text-[10px] uppercase tracking-[0.18em] text-[var(--muted)]"
-        style={{ fontFamily: "var(--f-plex-mono)" }}
+        className="mb-2.5 flex items-center gap-2 text-xs font-medium tracking-wide text-[var(--muted)]"
       >
-        <span className="text-[var(--bone)]">{index}</span>
+        <span className="font-mono text-[var(--bone)]">{index}</span>
         <span className="h-px flex-1 bg-[var(--line)]" />
         {title}
       </h3>

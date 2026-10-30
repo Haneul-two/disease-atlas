@@ -1,4 +1,5 @@
 "use client";
+import { useEffect, useRef } from "react";
 // 배경 분위기 레이어 — 별먼지 + 오로라 색 웅덩이 + 비네트.
 // 그래프(팬/줌) 뒤에 고정되어 깊이감을 만든다. 포인터 이벤트 없음.
 
@@ -8,7 +9,7 @@ function seeded(i: number, salt: number): number {
   return a - Math.floor(a);
 }
 
-const STARS = Array.from({ length: 90 }, (_, i) => ({
+const STARS = Array.from({ length: 96 }, (_, i) => ({
   x: +(seeded(i, 1) * 100).toFixed(2),
   y: +(seeded(i, 2) * 100).toFixed(2),
   size: +(1 + seeded(i, 3) * 1.7).toFixed(2),
@@ -55,9 +56,48 @@ const AURORAS = [
   },
 ] as const;
 
-export default function Starfield() {
+export default function Starfield({ focused = false }: { focused?: boolean }) {
+  const layer = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const element = layer.current;
+    const surface = element?.parentElement;
+    if (!element || !surface) return;
+    const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const pointer = window.matchMedia("(pointer: fine)");
+    let frame = 0;
+    const reset = () => {
+      cancelAnimationFrame(frame);
+      element.style.transform = "translate3d(0, 0, 0)";
+    };
+    const move = (event: PointerEvent) => {
+      if (motion.matches || !pointer.matches || focused || event.buttons) return;
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        const rect = surface.getBoundingClientRect();
+        const x = ((event.clientX - rect.left) / rect.width - 0.5) * 6;
+        const y = ((event.clientY - rect.top) / rect.height - 0.5) * 6;
+        element.style.transform = `translate3d(${x}px, ${y}px, 0)`;
+      });
+    };
+    surface.addEventListener("pointermove", move, { passive: true });
+    surface.addEventListener("pointerleave", reset);
+    motion.addEventListener("change", reset);
+    pointer.addEventListener("change", reset);
+    return () => {
+      reset();
+      surface.removeEventListener("pointermove", move);
+      surface.removeEventListener("pointerleave", reset);
+      motion.removeEventListener("change", reset);
+      pointer.removeEventListener("change", reset);
+    };
+  }, [focused]);
   return (
-    <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
+    <div
+      ref={layer}
+      className="atlas-starfield pointer-events-none absolute inset-0 overflow-hidden"
+      data-focused={focused}
+      aria-hidden
+    >
       {/* 오로라 — 느리게 표류하는 색 웅덩이 */}
       {AURORAS.map((a, i) => (
         <div
@@ -71,6 +111,7 @@ export default function Starfield() {
       {STARS.map((s, i) => (
         <span
           key={`star-${i}`}
+          className="atlas-background-star"
           style={{
             position: "absolute",
             left: `${s.x}%`,
@@ -79,8 +120,9 @@ export default function Starfield() {
             height: s.size,
             borderRadius: "50%",
             background: "#e9e3d6",
-            opacity: 0.5,
-            animation: `twinkle ${s.dur}s ease-in-out ${s.delay}s infinite`,
+            opacity: 0.65,
+            boxShadow: i % 5 === 0 ? "0 0 7px 1px #c6dcff99" : "0 0 3px #e9e3d655",
+            animation: `twinkle ${s.dur}s ease-in-out -${s.delay}s infinite`,
           }}
         />
       ))}
@@ -90,7 +132,7 @@ export default function Starfield() {
         className="absolute inset-0"
         style={{
           background:
-            "radial-gradient(ellipse at 50% 45%, transparent 52%, rgba(4, 6, 9, 0.5) 100%)",
+            "radial-gradient(ellipse at 50% 45%, transparent 52%, rgba(4, 6, 9, 0.2) 100%)",
         }}
       />
     </div>

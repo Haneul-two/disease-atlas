@@ -66,3 +66,17 @@ test("알 수 없는 타입이 섞여도 유효한 progression이 대표가 된�
   const e2 = invalidSecond.find((x) => x.types.includes("relation"))!;
   assert.equal(e2.relationType, "progression");
 });
+
+test("복수 관계의 해설을 모두 보존하고 대표 관계와 해설을 일치시킨다", () => {
+  const relations = [
+    { fromId: "b", toId: "a", type: "progression" as const, note: "대표 진행 해설" },
+    { fromId: "a", toId: "b", type: "comorbidity" as const, note: "동반 관계 해설" },
+  ];
+  for (const input of [relations, [...relations].reverse()]) {
+    const edge = deriveEdges(diseases, input)[0];
+    assert.equal(edge.note, "대표 진행 해설");
+    assert.equal(edge.relationFrom, "b");
+    assert.equal(edge.relationDetails?.length, 2);
+    assert.equal(edge.relationDetails?.[1].note, "동반 관계 해설");
+  }
+});

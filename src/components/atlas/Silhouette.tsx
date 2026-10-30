@@ -1,255 +1,273 @@
 "use client";
-// 별자리 배경 — 가는 라인아트 몸 실루엣(스스로 그려지는 선) + 부위별 성운 글로우.
-// ViewportPortal 안이라 팬/줌에 함께 고정된다.
-import { ViewportPortal } from "@xyflow/react";
+import type { CSSProperties } from "react";
+import Image from "next/image";
+import { ViewportPortal, useViewport, useStore } from "@xyflow/react";
 import type { AtlasBodyPart, AtlasNode } from "@/lib/atlas-types";
 import { zoneCenter, zoneExtent, zoneLabelPosition } from "@/lib/atlas-layout";
 
+import AnatomyDetails from "./AnatomyDetails";
+import { diseaseLandmark } from "@/lib/atlas-anatomy";
+
 type Props = {
+  illustrated?: boolean;
+  aligned?: boolean;
+  activeNode?: AtlasNode | null;
   bodyParts: AtlasBodyPart[];
   nodes: AtlasNode[];
   visibleZones: Set<string>;
-  /** 강조(호버/선택) 노드가 속한 부위 — 해당 글로우를 밝힌다 */
   activeZone?: string | null;
+  onFocusZone: (zone: string) => void;
+  interactive: boolean;
 };
 
-const BODY_LEFT = 470; // div 중심 = 중앙 세로축
-const BODY_TOP = 90;
+// Schematic anatomy: disease clusters denote regions, not precise lesion locations.
+const outline =
+  "M246 240C245 275 224 290 186 303C150 312 127 333 116 370L97 471Q90 501 87 523L63 682L72 704L95 714L112 668L143 526L151 476L158 641Q167 699 157 766Q143 814 157 868L175 977L182 1106Q174 1143 181 1181L184 1289L169 1310L153 1320Q146 1335 163 1343L217 1343L230 1303L232 1205Q248 1155 247 1110L257 1008L273 945Q280 928 287 945L303 1008L313 1110Q312 1155 328 1205L330 1303L343 1343L397 1343Q414 1335 407 1320L391 1310L376 1289L379 1181Q386 1143 378 1106L385 977L403 868Q417 814 403 766Q393 699 402 641L409 476L417 526L448 668L465 714L488 704L497 682L473 523Q470 501 463 471L444 370C433 333 410 312 374 303C336 290 315 275 314 240";
 
-/** 전신 외곽 — 목→어깨→팔(몸에 붙임)→허리→골반→다리→발, 좌우 대칭의 연속 곡선.
- *  좌측 좌표를 기준으로 우측은 x' = 560 - x 미러. */
-const BODY_OUTLINE = [
-  "M 258 150",
-  "C 256 170 250 182 234 190", // 목 → 승모근
-  "C 198 202 170 218 158 248", // 어깨
-  "C 140 290 132 348 130 412", // 상완(몸에 붙은 팔) 외곽
-  "C 126 470 136 520 150 558", // 팔꿈치 → 허리(잘록)
-  "C 158 595 160 642 154 690", // 골반 외곽
-  "C 150 760 158 840 164 905", // 허벅지 외곽
-  "C 168 950 170 985 170 1015", // 종아리 → 발목
-  "L 208 1015", // 발
-  "C 212 960 216 905 222 850", // 종아리 안쪽
-  "C 230 790 246 745 266 715", // 허벅지 안쪽
-  "C 274 706 278 702 280 700", // 가랑이 중심
-  "C 282 702 286 706 294 715",
-  "C 314 745 330 790 338 850",
-  "C 344 905 348 960 352 1015",
-  "L 390 1015",
-  "C 390 985 392 950 396 905",
-  "C 402 840 410 760 406 690",
-  "C 400 642 402 595 410 558",
-  "C 424 520 434 470 430 412",
-  "C 428 348 420 290 402 248",
-  "C 390 218 362 202 326 190",
-  "C 310 182 304 170 302 150",
-].join(" ");
 
-// 라인아트 스트로크 — pathLength=1 트릭으로 dashoffset 1→0 드로잉
-function DrawnPath({
-  d,
-  delay,
-  duration = 1.6,
-}: {
-  d: string;
-  delay: number;
-  duration?: number;
-}) {
-  return (
-    <path
-      d={d}
-      pathLength={1}
-      strokeDasharray={1}
-      style={{
-        animation: `body-draw ${duration}s cubic-bezier(0.4, 0, 0.2, 1) ${delay}s backwards`,
-      }}
-    />
-  );
-}
-
-export default function Silhouette({ bodyParts, nodes, visibleZones, activeZone }: Props) {
-  const countByZone = new Map<string, number>();
-  for (const n of nodes) {
-    if (!visibleZones.has(n.layoutZone)) continue;
-    countByZone.set(n.layoutZone, (countByZone.get(n.layoutZone) ?? 0) + 1);
-  }
-
-  const activeParts = bodyParts.filter(
-    (bp) => visibleZones.has(bp.layoutZone) && (countByZone.get(bp.layoutZone) ?? 0) > 0
-  );
-
-  // 내분비 연결선 좌표(목 → 내분비 클러스터)
-  const endoVisible = activeParts.some((bp) => bp.layoutZone === "endocrine");
-  const endoC = zoneCenter("endocrine");
-
+export default function Silhouette({
+  illustrated = false,
+  aligned,
+  bodyParts,
+  activeNode,
+  nodes,
+  visibleZones,
+  activeZone,
+  onFocusZone,
+  interactive,
+}: Props) {
+  const nodePosition = useStore(state => activeNode ? state.nodeLookup.get(activeNode.id)?.position : undefined);
+  const landmark = activeNode ? diseaseLandmark(activeNode.slug, illustrated) : undefined;
+  const { zoom } = useViewport();
+  const narrow = useStore((state) => state.width < 640);
+  const counts = new Map<string, number>();
+  for (const n of nodes)
+    counts.set(n.layoutZone, (counts.get(n.layoutZone) ?? 0) + 1);
+  const parts = bodyParts.filter((b) => visibleZones.has(b.layoutZone));
+  const color = (zone: string) =>
+    bodyParts.find((b) => b.layoutZone === zone)?.color ?? "#cbb893";
+  const organStyle = (zone: string): CSSProperties => ({
+    color: color(zone),
+    opacity: !visibleZones.has(zone)
+      ? 0.08
+      : activeZone && activeZone !== zone
+        ? 0.22
+        : activeZone === zone
+          ? 0.9
+          : 0.5,
+  });
   return (
     <ViewportPortal>
-      {/* 1) 부위별 성운 글로우 — 클러스터 뒤에 넓고 옅게 깔린다.
-             호버/선택 부위는 밝아지고, 다른 부위는 가라앉는다. */}
-      {activeParts.map((bp, i) => {
-        const c = zoneCenter(bp.layoutZone);
-        const e = zoneExtent(bp.layoutZone, countByZone.get(bp.layoutZone) ?? 1);
-        const isActive = activeZone === bp.layoutZone;
-        const dimOther = !!activeZone && !isActive;
-        const a = isActive ? ["40", "1e"] : ["17", "0a"]; // [중심, 중간] 알파(hex)
-        return (
-          <div
-            key={`glow-${bp.slug}`}
-            style={{
-              position: "absolute",
-              left: c.x,
-              top: c.y,
-              width: e.rx * 2.7,
-              height: e.ry * 2.7,
-              pointerEvents: "none",
-              borderRadius: "50%",
-              transform: "translate(-50%, -50%)",
-              background: `radial-gradient(ellipse at center, ${bp.color}${a[0]} 0%, ${bp.color}${a[1]} 42%, transparent 70%)`,
-              opacity: dimOther ? 0.3 : 1,
-              transition: "opacity 0.35s ease",
-              animation: isActive
-                ? undefined
-                : `nebula-drift ${13 + i * 2.4}s ease-in-out ${i * 1.7}s infinite`,
-              willChange: "transform, opacity",
-            }}
-          />
-        );
-      })}
-
-      {/* 2) 몸 실루엣 — 가는 외곽선이 스스로 그려진다 */}
       <div
-        style={{
-          position: "absolute",
-          left: BODY_LEFT,
-          top: BODY_TOP,
-          // 클러스터 확장(limbs cy 1250)에 맞춰 인체를 늘인다 — 발끝이 관절 클러스터를 덮도록
-          transform: "translate(-50%, 0) scale(1.25)",
-          transformOrigin: "top center",
-          pointerEvents: "none",
-          animation: "silhouette-breathe 14s ease-in-out infinite",
-        }}
+        className="atlas-anatomy"
+        data-active-zone={activeZone ?? "none"}
+        style={{ left: 190, top: 40, width: 560, height: 1400 }}
       >
-        <svg width={560} height={1080} viewBox="0 0 560 1080" fill="none" aria-hidden>
-          {/* 아주 옅은 면 — 몸의 존재감만 */}
-          <g fill="rgba(203, 184, 147, 0.03)" stroke="none">
-            <circle cx={280} cy={92} r={56} />
-            <path d={BODY_OUTLINE} />
-          </g>
-
-          {/* 라인아트 외곽선 — 머리부터 발끝까지 순서대로 그려진다 */}
+        {illustrated && <svg width="0" height="0" aria-hidden="true" style={{ position: "absolute" }}>
+          <defs>
+            <filter id="atlas-body-composite" colorInterpolationFilters="sRGB">
+              <feColorMatrix type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  4 4 4 0 0" />
+            </filter>
+          </defs>
+        </svg>}
+        {illustrated && <Image
+          className="atlas-detailed-body"
+          src="/anatomy-detailed-v1.png"
+          width={560} height={1400}
+          alt="" aria-hidden="true"
+          priority unoptimized
+          style={{ opacity: activeZone ? 0.55 : 0.7 }}
+        />}
+        <svg
+          className={illustrated ? "atlas-schematic-hidden" : undefined}
+          width="560"
+          height="1400"
+          viewBox="0 0 560 1400"
+          fill="none"
+          aria-hidden="true"
+        >
+          <defs>
+            <linearGradient id="atlas-body-wash" x1="0" y1="0" x2="1" y2="1">
+              <stop stopColor="#cbb893" stopOpacity=".1" />
+              <stop offset=".5" stopColor="#829db8" stopOpacity=".025" />
+              <stop offset="1" stopColor="#cbb893" stopOpacity=".065" />
+            </linearGradient>
+          </defs>
           <g
-            stroke="rgba(203, 184, 147, 0.24)"
-            strokeWidth={1.2}
-            strokeLinecap="round"
+            className="atlas-plate-guides"
+            stroke="var(--bone)"
+            opacity=".16"
+            strokeWidth="1"
+          >
+            <path d="M280 15V1370" strokeDasharray="2 12" />
+            <path d="M80 50H30V100 M480 50H530V100 M80 1350H30V1300 M480 1350H530V1300" />
+            {[180, 525, 870, 1215].map((y) => (
+              <g key={y}>
+                <path d={`M10 ${y}H40 M520 ${y}H550`} />
+                <path d={`M65 ${y}H495`} strokeDasharray="1 14" opacity=".6" />
+              </g>
+            ))}
+          </g>
+          <g
+            className="atlas-body-outline"
+            stroke="var(--bone)"
+            strokeWidth="1.8"
             strokeLinejoin="round"
-            fill="none"
-          >
-            {/* 머리 */}
-            <circle
-              cx={280}
-              cy={92}
-              r={56}
-              pathLength={1}
-              strokeDasharray={1}
-              style={{ animation: "body-draw 1.3s cubic-bezier(0.4,0,0.2,1) 0.2s backwards" }}
-            />
-            {/* 전신 외곽 — 하나의 연속 곡선 */}
-            <DrawnPath d={BODY_OUTLINE} delay={1.0} duration={3.2} />
-          </g>
-
-          {/* 해부 힌트 — 쇄골·골반, 아주 흐릿하게 나중에 떠오른다 */}
-          <g
-            stroke="rgba(203, 184, 147, 0.12)"
-            strokeWidth={1}
             strokeLinecap="round"
-            fill="none"
+            fill="url(#atlas-body-wash)"
           >
+            <path d="M280 45 C213 45 188 83 193 146 L200 193 Q220 240 246 249 L314 249 Q340 240 360 193 L367 146 C372 83 347 45 280 45Z" />
+            <path d={outline} />
+          </g>
+          <g
+            data-body-layer="skeleton"
+            stroke="var(--bone)"
+            strokeWidth="1.3"
+            opacity=".24"
+            strokeLinecap="round"
+          >
+            <path d="M170 781Q220 821 251 859 M390 781Q340 821 309 859 M251 859Q280 895 309 859" />
+            {[365, 405, 445, 485, 525].map((y, i) => (
+              <path
+                key={y}
+                d={`M270 ${y}Q${180 - i * 2} ${y - 25} ${169 + i * 3} ${y + 22} M290 ${y}Q${380 + i * 2} ${y - 25} ${391 - i * 3} ${y + 22}`}
+              />
+            ))}
+            <path d="M233 945L215 1180 M327 945L345 1180 M210 1225L204 1290 M350 1225L356 1290" />
+            <ellipse cx="218" cy="1200" rx="17" ry="23" />
+            <ellipse cx="342" cy="1200" rx="17" ry="23" />
+          </g>
+          <g
+            className="atlas-organ"
+            data-organ="brain"
+            style={organStyle("head")}
+            stroke="currentColor"
+            strokeWidth="2"
+            fill="currentColor"
+            fillOpacity=".09"
+          >
+            <path d="M275 84C254 63 227 80 226 101C201 109 210 137 217 144C204 166 225 188 245 186C252 205 274 194 280 183C286 194 308 205 315 186C335 188 356 166 343 144C350 137 359 109 334 101C333 80 306 63 285 84Z" />
             <path
-              d="M230 218 Q280 236 330 218"
-              style={{ animation: "hint-in 1.2s ease 3.4s backwards" }}
-            />
-            <path
-              d="M234 656 Q280 690 326 656"
-              style={{ animation: "hint-in 1.2s ease 3.7s backwards" }}
-            />
-            {/* 팔 분리선 — 겨드랑이에서 손목으로, 몸과 팔을 나눈다 */}
-            <DrawnPath
-              d="M 178 268 C 164 330 158 395 160 455 C 162 510 168 545 178 575"
-              delay={3.0}
-              duration={1.2}
-            />
-            <DrawnPath
-              d="M 382 268 C 396 330 402 395 400 455 C 398 510 392 545 382 575"
-              delay={3.0}
-              duration={1.2}
+              d="M280 86V180 M245 96Q268 108 246 126T250 169 M315 96Q292 108 314 126T310 169 M220 141Q239 135 245 148 M340 141Q321 135 315 148"
+              fill="none"
             />
           </g>
+          <g
+            className="atlas-organ"
+            data-organ="lungs-heart"
+            style={organStyle("chest")}
+            stroke="currentColor"
+            strokeWidth="2"
+            fill="currentColor"
+            fillOpacity=".065"
+          >
+            <path d="M259 358C245 333 222 351 204 391C187 431 175 499 188 541Q220 560 253 529Z M301 358C315 333 338 351 356 391C373 431 385 499 372 541Q340 560 309 529Z" />
+            <path
+              d="M280 301V387M280 387L232 435M280 387L327 435M232 435L215 484M327 435L345 484"
+              fill="none"
+            />
+            <path
+              d="M284 453C258 428 242 456 252 484C263 515 293 543 300 545C321 519 330 482 313 464C305 454 294 451 284 453Z"
+              fillOpacity=".22"
+            />
+          </g>
+          <g
+            className="atlas-organ"
+            data-organ="abdomen"
+            style={organStyle("abdomen")}
+            stroke="currentColor"
+            strokeWidth="1.8"
+            fill="currentColor"
+            fillOpacity=".07"
+          >
+            <path d="M190 606Q232 576 285 604L309 624Q262 673 195 644Z" />
+            <path d="M313 613C307 642 340 635 348 664C353 693 324 708 296 684Q280 668 292 650" />
+            <path d="M205 709Q190 729 205 754L205 823Q212 846 237 835L333 835Q359 837 357 812L357 736Q360 707 335 708Z" />
+            <path
+              d="M232 738Q256 728 275 741T330 738 M229 760Q245 750 260 763T329 760 M230 788Q248 778 267 791T327 788"
+              fill="none"
+            />
+          </g>
+          <g
+            className="atlas-organ"
+            data-organ="joints"
+            style={organStyle("limbs")}
+            stroke="currentColor"
+            strokeWidth="2"
+          >
+            <circle cx="218" cy="1200" r="26" />
+            <circle cx="342" cy="1200" r="26" />
+            <circle cx="195" cy="885" r="17" />
+            <circle cx="365" cy="885" r="17" />
+            <path d="M275 680V860 M285 680V860" strokeDasharray="3 9" />
+          </g>
+          <AnatomyDetails />
         </svg>
       </div>
-
-      {/* 3) 내분비 리더선 — 목에서 우측 샘 클러스터로, 조용한 점선 */}
-      {endoVisible && (
-        <svg
-          style={{
-            position: "absolute",
-            left: 560,
-            top: 300,
-            pointerEvents: "none",
-            overflow: "visible",
-          }}
-          width={1}
-          height={1}
-          aria-hidden
-        >
-          <line
-            x1={40}
-            y1={20}
-            x2={endoC.x - 560}
-            y2={endoC.y - 300}
-            stroke="#b07ae0"
-            strokeWidth={1}
-            strokeDasharray="2 7"
-            opacity={0.22}
-            style={{ animation: "lead-flow 2.4s linear infinite" }}
-          />
+      {aligned && <div className="atlas-systemic-caption" style={{ position: "absolute", left: 1180, top: 420 }}>전신·대사 질환</div>}
+      {activeNode && landmark && !landmark.systemic && (
+        <svg className="atlas-anatomy-guide" aria-hidden="true" style={{ position: "absolute", left: 0, top: 0, width: 1400, height: 1500, overflow: "visible", pointerEvents: "none" }}>
+          <path d={`M${(nodePosition ?? activeNode.position).x + 52} ${(nodePosition ?? activeNode.position).y + 9}L${landmark.x} ${landmark.y}`} fill="none" stroke={activeNode.color} strokeWidth="1.5" strokeDasharray="4 6" opacity=".8" />
+          <circle key={activeNode.id} className="atlas-organ-wave" cx={landmark.x} cy={landmark.y} r="24" fill="none" stroke={activeNode.color} strokeWidth="2" />
+          <circle cx={landmark.x} cy={landmark.y} r="12" fill={activeNode.color} fillOpacity=".12" stroke={activeNode.color} />
+          <text x={landmark.x + 18} y={landmark.y - 15} fill="var(--paper)" fontSize="14" stroke="var(--ink-950)" strokeWidth="4" paintOrder="stroke">{landmark.label}</text>
         </svg>
       )}
-
-      {/* 4) 부위 라벨 — 클러스터 위 작은 별자리 이름 */}
-      {activeParts.map((bp, i) => {
-        const pos = zoneLabelPosition(bp.layoutZone, countByZone.get(bp.layoutZone) ?? 1);
-        const isActive = activeZone === bp.layoutZone;
+      {parts.map((bp, i) => {
+        const center = zoneCenter(bp.layoutZone),
+          extent = zoneExtent(bp.layoutZone, counts.get(bp.layoutZone) ?? 1);
+        const active = activeZone === bp.layoutZone;
+        const pos = zoneLabelPosition(
+          bp.layoutZone,
+          counts.get(bp.layoutZone) ?? 1,
+        );
         return (
-          <div
-            key={bp.slug}
-            style={{
-              position: "absolute",
-              left: pos.x,
-              top: pos.y,
-              transform: "translate(-50%, -50%)",
-              pointerEvents: "none",
-              animation: `star-in 0.8s ease ${0.5 + i * 0.18}s backwards`,
-            }}
-          >
-            <div className="flex flex-col items-center gap-1">
-              <span
-                className="text-[13px] leading-none tracking-[0.18em]"
-                style={{
-                  fontFamily: "var(--f-gowun)",
-                  color: isActive ? "var(--paper)" : "var(--paper-dim)",
-                  opacity: isActive ? 0.95 : 0.6,
-                  transition: "opacity 0.3s ease, color 0.3s ease",
-                }}
+          <div key={bp.slug}>
+            <div
+              className="atlas-region-halo"
+              style={{
+                left: center.x,
+                top: center.y,
+                width: extent.rx * 2.3,
+                height: extent.ry * 2.3,
+                background: `radial-gradient(ellipse, ${bp.color}${active ? "30" : "10"}, transparent 68%)`,
+                opacity: activeZone && !active ? 0.24 : 1,
+              }}
+            />
+            <div
+              className="atlas-region-caption"
+              style={
+                {
+                  left: bp.layoutZone === "endocrine" || narrow ? pos.x : 145,
+                  top:
+                    bp.layoutZone === "endocrine" || narrow
+                      ? pos.y - 10
+                      : center.y,
+                  transform: `translate(-50%, -50%) scale(${Math.min(2.4, 1 / zoom)})`,
+                  "--region-color": bp.color,
+                } as CSSProperties
+              }
+            >
+              <button
+                type="button"
+                className="atlas-region-button nodrag nopan"
+                disabled={!interactive}
+                onClick={() => onFocusZone(bp.layoutZone)}
+                aria-label={`${bp.name} 부위 확대`}
               >
-                {bp.name}
+                <span className="font-mono text-[10px] opacity-65">
+                  0{i + 1}
+                </span>
+                <span>{bp.name}</span>
+                <span aria-hidden="true" className="text-xs opacity-60">
+                  {interactive ? "↗" : ""}
+                </span>
+              </button>
+              <span className="atlas-region-meta">
+                {bp.layoutZone === "endocrine"
+                  ? "여러 장기에 걸친 계통"
+                  : `${counts.get(bp.layoutZone) ?? 0}개 질병`}
               </span>
-              <span
-                className="inline-block h-px w-7"
-                style={{
-                  background: bp.color,
-                  opacity: isActive ? 0.7 : 0.35,
-                  transition: "opacity 0.3s ease",
-                }}
-              />
             </div>
           </div>
         );

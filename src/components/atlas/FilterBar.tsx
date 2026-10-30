@@ -40,6 +40,7 @@ export default function FilterBar({
             <button
               key={bp.slug}
               onClick={() => toggleZone(bp.layoutZone)}
+              aria-pressed={on}
               className="group flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-md border px-2.5 py-1 text-[12.5px] transition-all duration-150"
               style={{
                 fontFamily: "var(--f-plex-kr)",
@@ -74,6 +75,7 @@ export default function FilterBar({
             <button
               key={type}
               onClick={() => toggleEdge(type)}
+              aria-pressed={on}
               className="flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-md border px-2.5 py-1 text-[12px] transition-all duration-150"
               style={{
                 fontFamily: "var(--f-plex-kr)",

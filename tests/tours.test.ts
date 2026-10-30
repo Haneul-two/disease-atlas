@@ -30,3 +30,15 @@ test("한 투어 안에서 질병이 중복되지 않는다", () => {
     assert.equal(new Set(slugs).size, slugs.length, t.slug);
   }
 });
+test("original health tours provide sources and avoid deterministic pathways", () => {
+  for (const slug of [
+    "road-to-dementia",
+    "what-is-that-tremor",
+    "heart-to-brain",
+  ]) {
+    const tour = TOURS.find((item) => item.slug === slug);
+    assert.ok(tour, slug);
+    assert.ok(tour.sources && tour.sources.length >= 2, slug);
+    assert.match(tour.summary.join(" "), /아니라|않습니다|아닙니다/, slug);
+  }
+});

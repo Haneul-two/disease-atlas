@@ -1,6 +1,7 @@
 // Disease Atlas — DB → Atlas 그래프 데이터 (서버 전용)
 import { prisma } from "./prisma";
-import { deriveEdges, zonePositions } from "./atlas-layout";
+import { deriveEdges } from "./atlas-layout";
+import { anatomicalPositions } from "./atlas-anatomy";
 import { toRelationType } from "./atlas-types";
 import type { AtlasData, AtlasNode } from "./atlas-types";
 
@@ -19,20 +20,9 @@ export async function getAtlasGraph(): Promise<AtlasData> {
     prisma.diseaseRelation.findMany(),
   ]);
 
-  // 부위(zone)별로 묶어 좌표 배치
-  const byZone = new Map<string, typeof diseases>();
-  for (const d of diseases) {
-    const zone = d.bodyPart.layoutZone;
-    const list = byZone.get(zone) ?? [];
-    list.push(d);
-    byZone.set(zone, list);
-  }
-
-  const positionById = new Map<string, { x: number; y: number }>();
-  for (const [zone, list] of byZone) {
-    const coords = zonePositions(zone, list.length);
-    list.forEach((d, i) => positionById.set(d.id, coords[i]));
-  }
+  const positions = anatomicalPositions(diseases.map(d => ({
+    slug: d.slug, layoutZone: d.bodyPart.layoutZone,
+  })));
 
   const nodes: AtlasNode[] = diseases.map((d) => ({
     id: d.id,
@@ -47,7 +37,7 @@ export async function getAtlasGraph(): Promise<AtlasData> {
     layoutZone: d.bodyPart.layoutZone,
     categoryName: d.category?.name ?? null,
     symptoms: d.symptoms.map((s) => s.symptom.name),
-    position: positionById.get(d.id) ?? { x: 0, y: 0 },
+    position: positions.get(d.slug) ?? { x: 0, y: 0 },
   }));
 
   const edges = deriveEdges(

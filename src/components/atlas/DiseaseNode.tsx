@@ -13,6 +13,11 @@ export type DiseaseNodeData = {
   dimmed?: boolean;
   weight?: number;
   appearDelay?: number;
+  tourStep?: number;
+  tourMuted?: boolean;
+  tourCompleted?: boolean;
+  overview?: boolean;
+  representative?: boolean;
 };
 
 function hexToRgba(hex: string, a: number): string {
@@ -53,16 +58,29 @@ function DiseaseNode({ data }: NodeProps) {
       style={{
         // fill은 backwards만 — both/forwards면 종료 후에도 키프레임 opacity가
         // 인라인 디밍(opacity)을 영구히 덮어쓴다.
+        width: 104,
         animation: "star-in 0.7s cubic-bezier(0.22, 1, 0.36, 1) backwards",
         animationDelay: `${d.appearDelay ?? 0}ms`,
-        opacity: d.dimmed ? 0.1 : 1,
+        opacity: d.dimmed ? 0.1 : d.tourMuted ? 0.35 : 1,
         transition: "opacity 0.3s ease",
         cursor: "pointer",
       }}
+      data-overview={!!d.overview}
+      data-representative={!!d.representative}
+      data-selected={!!d.selected}
+      data-active={!!d.active}
+      data-tour-step={d.tourStep || undefined}
+      data-tour-completed={!!d.tourCompleted}
       title={`${d.label} · ${d.bodyPartName}`}
     >
       <Handle type="target" position={Position.Top} style={handleStyle} />
       <Handle type="source" position={Position.Bottom} style={handleStyle} />
+
+      {!!d.tourStep && (
+        <span className="atlas-node-step" aria-label={`${d.tourStep}단계`}>
+          {d.tourStep}
+        </span>
+      )}
 
       {/* 별 본체 — 코어(밝은 중심) + 부위색 헤일로 */}
       <span
@@ -80,19 +98,21 @@ function DiseaseNode({ data }: NodeProps) {
               ? `0 0 0 2px ${hexToRgba(c, 0.25)}, 0 0 14px 3px ${hexToRgba(c, 0.65)}`
               : `0 0 ${6 + w * 10}px ${1 + w * 2.5}px ${hexToRgba(c, 0.4 + w * 0.25)}`,
           transform: d.active ? "scale(1.22)" : "scale(1)",
-          transition: "box-shadow 0.25s ease, transform 0.25s ease, background 0.25s ease",
+          transition:
+            "box-shadow 0.25s ease, transform 0.25s ease, background 0.25s ease",
         }}
       />
 
       {/* 라벨 — 별 아래 작은 글자 */}
       <span
+        className="atlas-disease-label"
         style={{
           marginTop: 7,
           fontSize: 11.5 + w * 1.5,
           lineHeight: 1,
           whiteSpace: "nowrap",
           fontFamily: "var(--f-plex-kr)",
-          fontWeight: lit ? 600 : 450,
+          fontWeight: lit ? 600 : 500,
           letterSpacing: "-0.01em",
           color: lit ? "var(--paper)" : "var(--paper-dim)",
           textShadow: d.active
