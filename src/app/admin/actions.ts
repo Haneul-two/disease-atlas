@@ -1,11 +1,20 @@
 "use server";
 // 관리자 변이 — 로그인/로그아웃 + 질병·계통·증상·관계 CRUD.
 // 모든 변이는 인증 세션을 요구하고, 성공 시 Atlas(`/`)와 대시보드를 재검증한다.
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
-import { ADMIN_COOKIE, checkPassword, isAuthed, sessionToken } from "@/lib/auth";
+import {
+  ADMIN_COOKIE,
+  SESSION_MAX_AGE,
+  checkPassword,
+  clearLoginFailures,
+  isAuthed,
+  loginBlocked,
+  recordLoginFailure,
+  sessionToken,
+} from "@/lib/auth";
 import { toRelationType } from "@/lib/atlas-types";
 
 export type ActionResult = { ok: boolean; error?: string; message?: string };
@@ -40,12 +49,20 @@ export async function loginAction(
   _prev: ActionResult | null,
   fd: FormData
 ): Promise<ActionResult> {
+  // Vercel이 x-forwarded-for 맨 앞에 실제 접속 IP를 넣는다.
+  const ip = (await headers()).get("x-forwarded-for")?.split(",")[0].trim() || "unknown";
+  if (loginBlocked(ip)) {
+    return { ok: false, error: "로그인 시도가 너무 많습니다. 15분 뒤 다시 시도하세요." };
+  }
+
   const pw = str(fd, "password");
   if (!checkPassword(pw)) {
+    recordLoginFailure(ip);
     return { ok: false, error: "비밀번호가 올바르지 않습니다." };
   }
   const token = sessionToken();
   if (!token) return { ok: false, error: "서버에 관리자 비밀번호가 설정되지 않았습니다." };
+  clearLoginFailures(ip);
 
   const store = await cookies();
   store.set(ADMIN_COOKIE, token, {
@@ -53,7 +70,7 @@ export async function loginAction(
     sameSite: "lax",
     path: "/",
     secure: process.env.NODE_ENV === "production",
-    maxAge: 60 * 60 * 12, // 12시간
+    maxAge: SESSION_MAX_AGE,
   });
   redirect("/admin");
 }
